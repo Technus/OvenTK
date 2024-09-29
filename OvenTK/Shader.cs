@@ -1,4 +1,4 @@
-﻿namespace OvenTK.OvenTK;
+﻿namespace OvenTK.Lib;
 
 // A simple class meant to help create shaders.
 public class Shader(int handle) : IDisposable
@@ -191,8 +191,8 @@ public class Shader(int handle) : IDisposable
                 //Nothing
             }
 
-            if (GL.GetInteger(GetPName.CurrentProgram) == handle)
-                GL.UseProgram(default);
+            //if (GL.GetInteger(GetPName.CurrentProgram) == handle)
+            //    GL.UseProgram(default);
             GL.DeleteProgram(handle);
             handle = default;
 

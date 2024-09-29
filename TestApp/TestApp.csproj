@@ -22,7 +22,7 @@
 	</Choose>
 
 	<ItemGroup>
-		<ProjectReference Include="..\OvenTK\OvenTK.csproj" />
+		<ProjectReference Include="..\OvenTK\Lib.csproj" />
 	</ItemGroup>
 
 </Project>

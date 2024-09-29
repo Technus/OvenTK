@@ -1,4 +1,4 @@
-﻿namespace OvenTK.OvenTK;
+﻿namespace OvenTK.Lib;
 
 public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDisposable
 {
@@ -44,7 +44,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         var size = value.SizeOf();
         if (byteSize < size)
             throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
-        fixed (void* p = value)
+        fixed (V* p = value)
             GL.NamedBufferSubData(handle, default, size, (nint)p);
     }
 
@@ -53,16 +53,17 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         var size = value.SizeOf();
         if (byteSize < size)
             throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
-        fixed(void* p = value)
+        fixed (V* p = value)
             GL.NamedBufferSubData(handle, default, size, (nint)p);
     }
 
-    public void Write<V>(ref V value) where V : struct
+    public unsafe void Write<V>(ref readonly V value) where V : struct
     {
         var size = value.SizeOf();
         if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}"); 
-        GL.NamedBufferSubData(handle, default, size, ref value);
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        fixed(V* p = &value)
+            GL.NamedBufferSubData(handle, default, size, (nint)p);
     }
 
     public void Write<V>(V[] value) where V : struct
@@ -103,16 +104,17 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         var size = value.SizeOf();
         if (byteSize < size)
             throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
-        fixed(void* p = value)
+        fixed (V* p = value)
             GL.GetNamedBufferSubData(handle, default, size, (nint)p);
     }
 
-    public void Read<V>(ref V value) where V : struct
+    public unsafe void Read<V>(ref readonly V value) where V : struct
     {
         var size = value.SizeOf();
         if (byteSize < size)
             throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
-        GL.GetNamedBufferSubData(handle, default, size, ref value);
+        fixed(V* p = &value)
+            GL.GetNamedBufferSubData(handle, default, size, (nint)p);
     }
 
     public void Read<V>(V[] value) where V : struct
@@ -130,7 +132,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
             throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
         GL.GetNamedBufferSubData(handle, default, size, value);
     }
-
+    
     public void Read<V>(V[,,] value) where V : struct
     {
         var size = value.SizeOf();
@@ -205,7 +207,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        fixed(void* p = memory)
+        fixed (V* p = memory)
             GL.NamedBufferData(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
@@ -214,16 +216,17 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        fixed (void* p = memory)
+        fixed (V* p = memory)
             GL.NamedBufferData(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
 
-    public static BufferData CreateFrom<V>(ref V memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static unsafe BufferData CreateFrom<V>(ref readonly V memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        GL.NamedBufferData(handle, size, ref memory, hint);
+        fixed(V* p = &memory)
+            GL.NamedBufferData(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
 

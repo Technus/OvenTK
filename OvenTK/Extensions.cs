@@ -1,4 +1,4 @@
-﻿namespace OvenTK.OvenTK;
+﻿namespace OvenTK.Lib;
 
 public static class Extensions
 {

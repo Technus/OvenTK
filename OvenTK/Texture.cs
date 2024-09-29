@@ -1,16 +1,18 @@
 ﻿using StbImageSharp;
 
-namespace OvenTK.OvenTK;
+namespace OvenTK.Lib;
 
 // A helper class, much like Shader, meant to simplify loading textures.
-public class Texture(int handle)
+public class Texture(int handle) : IDisposable
 {
+    private bool _disposed;
+
     public int Handle => handle;
 
     public static Texture LoadFromFile(string path, int textureUnit)
     {
         // Generate handle
-        var handle = GL.GenTexture();
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out int handle);
 
         // Bind the handle
         GL.ActiveTexture(TextureUnit.Texture0 + textureUnit);
@@ -76,5 +78,37 @@ public class Texture(int handle)
     {
         GL.ActiveTexture((TextureUnit)((int)TextureUnit.Texture0 + unit));
         GL.BindTexture(TextureTarget.Texture2D, Handle);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                //Nothing
+            }
+
+            GL.DeleteTextures(1, ref handle);
+            handle = default;
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            _disposed = true;
+        }
+    }
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~Texture()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
