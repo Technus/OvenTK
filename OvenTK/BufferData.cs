@@ -1,11 +1,9 @@
-﻿using System;
-using System.Drawing;
-using System.Net.NetworkInformation;
+﻿namespace OvenTK.OvenTK;
 
-namespace OvenTK.OvenTK;
-
-public class BufferData(int handle, int byteSize, BufferUsageHint hint)
+public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDisposable
 {
+    private bool _disposed;
+
     public int Handle => handle;
     public int Size => byteSize;
     public BufferUsageHint Hint => hint;
@@ -251,5 +249,29 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint)
         var size = memory.SizeOf();
         GL.NamedBufferData(handle, size, memory, hint);
         return new(handle, size, hint);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                byteSize = default;
+            }
+
+            GL.DeleteBuffers(1, ref handle);
+            handle = default;
+
+            _disposed = true;
+        }
+    }
+
+    ~BufferData() => Dispose(disposing: false);
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace OvenTK.OvenTK;
 
-public static class DataExtensions
+public static class Extensions
 {
     public static int SizeOf<T>(this ReadOnlySpan<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
