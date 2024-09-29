@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{EFD3F113-4F13-4021-936B-B7825E8135C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OvenTK", "OvenTK\OvenTK.csproj", "{CD333F68-2604-4C48-8858-0296D0C3C0A5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6F0140BB-6D30-458F-84F9-03CD64BF9544}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFD3F113-4F13-4021-936B-B7825E8135C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFD3F113-4F13-4021-936B-B7825E8135C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFD3F113-4F13-4021-936B-B7825E8135C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFD3F113-4F13-4021-936B-B7825E8135C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD333F68-2604-4C48-8858-0296D0C3C0A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD333F68-2604-4C48-8858-0296D0C3C0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD333F68-2604-4C48-8858-0296D0C3C0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD333F68-2604-4C48-8858-0296D0C3C0A5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61ADF5F4-0A0F-491D-B953-22BB3BF57083}
+	EndGlobalSection
+EndGlobal

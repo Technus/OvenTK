@@ -1,0 +1,25 @@
+<Project>
+	<PropertyGroup Label="Common Properties">
+		<Version>0.0.0.1</Version>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		
+		<CustomNamePrefix>OvenTK</CustomNamePrefix>
+		<AssemblyName>$(CustomNamePrefix).$(MSBuildProjectName)</AssemblyName>
+		<RootNamespace>$(CustomNamePrefix).$(MSBuildProjectName.Replace(" ", ""))</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup Label="Common References">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	
+	<ItemGroup Label="Common Attributes">
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>$(CustomNamePrefix).Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+</Project>
