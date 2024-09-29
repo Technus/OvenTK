@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFrameworks>net461;net8.0-windows</TargetFrameworks>
+		<TargetFrameworks>net8.0-windows;net481;</TargetFrameworks>
 		<UseWPF>true</UseWPF>
 	</PropertyGroup>
 
@@ -11,18 +11,37 @@
 			<ItemGroup>
 				<PackageReference Include="OpenTK.GLWpfControl" Version="4.3.2" />
 				<PackageReference Include="OpenTK" Version="4.8.2" />
+				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Graphics" />
+				<Using Include="OpenTK.Mathematics" />
 			</ItemGroup>
 		</When>
 		<Otherwise>
 			<ItemGroup>
 				<PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" />
 				<PackageReference Include="OpenTK" Version="3.3.3" />
+				<Using Include="OpenTK" />
 			</ItemGroup>
 		</Otherwise>
 	</Choose>
 
 	<ItemGroup>
 		<ProjectReference Include="..\OvenTK\Lib.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Properties\Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Properties\Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 </Project>

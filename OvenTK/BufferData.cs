@@ -1,5 +1,8 @@
-﻿namespace OvenTK.Lib;
+﻿using System.Diagnostics;
 
+namespace OvenTK.Lib;
+
+[DebuggerDisplay("{Handle}:{Size}:{Hint}")]
 public class BufferData : IDisposable
 {
     private const BufferUsageHint _default = BufferUsageHint.StaticDraw;
@@ -11,6 +14,8 @@ public class BufferData : IDisposable
         Size = byteSize;
         Hint = hint;
     }
+
+    public static implicit operator int(BufferData data) => data.Handle;
 
     public int Handle { get; protected set; }
     public int Size { get; protected set; }

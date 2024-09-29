@@ -3,7 +3,7 @@
 		<TargetFrameworks>netstandard2.1;net461;net481;net6;net8;</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<!-- S2368 - multidimensional/jagged arrays in public API -->
-		<NoWarn>$(NoWarn);S2368;</NoWarn>
+		<NoWarn>$(NoWarn);S2368;CS8500;</NoWarn>
 	</PropertyGroup>
 
 	<Choose>
