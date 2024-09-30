@@ -18,6 +18,12 @@ public class VertexArray : IDisposable
 
     public static implicit operator int(VertexArray? data) => data?.Handle ?? default;
 
+    // A wrapper function that enables the shader program.
+    public void Use()
+    {
+        GL.BindVertexArray(Handle);
+    }
+
     public static VertexArray Create(BufferBase buffer, IEnumerable<VertexArrayAttrib> attributes)
         => Create(buffer, attributes.ToArray());
 
