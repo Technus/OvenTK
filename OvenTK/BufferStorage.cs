@@ -3,7 +3,7 @@
 namespace OvenTK.Lib;
 
 [DebuggerDisplay("{Handle}:{Size}:{Flags}")]
-public class BufferStorage : IDisposable
+public class BufferStorage : BufferBase, IDisposable
 {
     private const BufferStorageFlags _default = BufferStorageFlags.None;
     private bool _disposed;
@@ -15,11 +15,13 @@ public class BufferStorage : IDisposable
         Flags = flags;
     }
 
-    public static implicit operator int(BufferStorage data) => data.Handle;
-
-    public int Handle { get; protected set; }
-    public int Size { get; protected set; }
     public BufferStorageFlags Flags { get; protected set; }
+
+    public override void Resize(int size)
+    {
+        Size = size;
+        GL.NamedBufferStorage(Handle, size, default, Flags);
+    }
 
     /// <summary>
     /// Creates Buffers without data

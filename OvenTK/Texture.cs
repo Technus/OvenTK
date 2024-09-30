@@ -18,6 +18,8 @@ public class Texture : IDisposable
         Height = height;
     }
 
+    public static implicit operator int(Texture? data) => data?.Handle ?? default;
+
     public int Handle { get; private set; }
     public int Width { get; private set; }
     public int Height { get; private set; }

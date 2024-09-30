@@ -10,19 +10,25 @@ public class VertexArray : IDisposable
     public int Handle { get; protected set; }
     public IReadOnlyList<VertexArrayAttrib> Attributes { get; protected set; }
 
-    protected VertexArray(int handle)
+    protected VertexArray(int handle, IReadOnlyList<VertexArrayAttrib> attributes)
     {
         Handle = handle;
-        Attributes = [];
+        Attributes = attributes;
     }
 
-    public static implicit operator int(VertexArray data) => data.Handle;
+    public static implicit operator int(VertexArray? data) => data?.Handle ?? default;
 
-    public static VertexArray Create()
+    public static VertexArray Create(BufferBase buffer, IEnumerable<VertexArrayAttrib> attributes)
+        => Create(buffer, attributes.ToArray());
+
+    public static VertexArray Create(BufferBase buffer, IReadOnlyList<VertexArrayAttrib> attributes)
     {
         GL.CreateVertexArrays(1, out int handle);
-
-        return new(handle);
+        GL.VertexArrayElementBuffer(handle, buffer.Handle);
+        var vao = new VertexArray(handle, attributes);
+        for (int i = 0; i < attributes.Count; i++)
+            attributes[i].Assign(vao, i);
+        return vao;
     }
 
     protected virtual void Dispose(bool disposing)
