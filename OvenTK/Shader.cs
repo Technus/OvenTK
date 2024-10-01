@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 
 namespace OvenTK.Lib;
 
@@ -53,11 +54,26 @@ public class Shader : IDisposable
         }
     }
 
+    public static async Task<Shader> CreateFromAsync(Stream vert, Stream frag, Encoding encoding = default!)
+    {
+        using var vertReader = new StreamReader(vert, encoding);
+        using var fragReader = new StreamReader(frag, encoding);
+        var vertStr = vertReader.ReadToEndAsync();
+        var fragStr = fragReader.ReadToEndAsync();
+        return CreateFrom(await vertStr, await fragStr);
+    }
+
+    public static Shader CreateFrom(byte[] vert, byte[] frag, Encoding encoding = default!)
+    {
+        encoding ??= Encoding.UTF8;
+        return CreateFrom(encoding.GetString(vert), encoding.GetString(frag));
+    }
+
     // This is how you create a simple shader.
     // Shaders are written in GLSL, which is a language very similar to C in its semantics.
     // The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
     // A commented example of GLSL can be found in shader.vert.
-    public static Shader LoadFromText(string vertSrc, string fragSrc)
+    public static Shader CreateFrom(string vertSrc, string fragSrc)
     {
         // GL.CreateShader will create an empty shader (obviously). The ShaderType enum denotes which type of shader will be created.
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
