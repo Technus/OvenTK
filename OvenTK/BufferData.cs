@@ -272,8 +272,18 @@ public class BufferData : BufferBase, IDisposable
                 Size = default;
             }
 
-            GL.DeleteBuffer(Handle);
-            Handle = default;
+            try
+            {
+                GL.DeleteBuffer(Handle);
+            }
+            catch (AccessViolationException e)
+            {
+                Debug.WriteLine(e);
+            }
+            finally
+            {
+                Handle = default;
+            }
 
             _disposed = true;
         }

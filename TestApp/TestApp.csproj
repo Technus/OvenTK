@@ -4,12 +4,14 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFrameworks>net8.0-windows;net481;</TargetFrameworks>
 		<UseWPF>true</UseWPF>
+		<!--Due to WPF bug assembly name should be set directly, we can also set a nice user friendly name here-->
+		<AssemblyName>OvenTK Test App</AssemblyName>
 	</PropertyGroup>
 
 	<Choose>
 		<When Condition=" '$(TargetFramework)' == 'net8.0-windows' ">
 			<ItemGroup>
-				<PackageReference Include="OpenTK.GLWpfControl" Version="4.3.2" />
+				<PackageReference Include="OpenTK.GLWpfControl" Version="4.2.3" />
 				<PackageReference Include="OpenTK" Version="4.8.2" />
 				<Using Include="OpenTK" />
 				<Using Include="OpenTK.Graphics" />

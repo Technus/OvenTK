@@ -195,10 +195,20 @@ public class Shader : IDisposable
                 //Nothing
             }
 
-            //if (GL.GetInteger(GetPName.CurrentProgram) == handle)
+            //if (GL.GetInteger(GetPName.CurrentProgram) == Handle)
             //    GL.UseProgram(default);
-            GL.DeleteProgram(Handle);
-            Handle = default;
+            try
+            {
+                GL.DeleteProgram(Handle);
+            }
+            catch (AccessViolationException e)
+            {
+                Debug.WriteLine(e);
+            }
+            finally
+            {
+                Handle = default;
+            }
 
             _uniformLocations = null;
 
