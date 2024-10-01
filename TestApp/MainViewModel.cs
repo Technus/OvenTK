@@ -3,6 +3,7 @@ using OvenTK.Lib;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
+using static OvenTK.Lib.BufferBase;
 
 namespace OvenTK.TestApp;
 
@@ -20,7 +21,7 @@ public class MainViewModel : DependencyObject
         0,1,2,
         0,2,3,
     ];
-    private const int _count = 1_000_000;
+    private const int _count = 10_000_000;
     private readonly Vector4[] _positions = new Vector4[_count];
     private readonly Vector4[] _values = new Vector4[_count];
 
@@ -53,21 +54,47 @@ public class MainViewModel : DependencyObject
     {
         DataSetup();
         GLSetup();
-        DataWrite();
+        //DataWriteWorker();
     }
 
-    public async Task DataWrite(CancellationToken token = default)
+    public void DataWriteBlit()
+    {
+        DataSetup();
+
+        _buffers[2].Write(_positions);
+        _buffers[4].Write(_values);
+    }
+
+    public void DataWriteMapped()
+    {
+        var rand = new Random();
+
+        using (var map = _buffers[2].Map<Vector4>(BufferAccess.WriteOnly))
+        {
+            var span = map.Span();
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = new Vector4((float)(rand.NextDouble() - 0.5) * 2, (float)(rand.NextDouble() - 0.5) * 2, 0f, 1f);
+            }
+        }
+
+
+        using (var map = _buffers[4].Map<Vector4>(BufferAccess.WriteOnly))
+        {
+            var span = map.Span();
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = new Vector4((float)rand.NextDouble() / 4, (float)rand.NextDouble() / 2, (float)rand.NextDouble(), (float)rand.NextDouble());
+            }
+        }
+    }
+
+    public async Task DataWriteWorker(CancellationToken token = default)
     {
         while(!token.IsCancellationRequested)
         {
-            var delay = Task.Delay(100, token);
-            var data = Dispatcher.InvokeAsync(() =>
-            {
-                DataSetup();
-
-                _buffers[2].Write(_positions);
-                _buffers[4].Write(_values);
-            }).Task;
+            var delay = Task.Delay(1000, token);
+            var data = Dispatcher.InvokeAsync(DataWriteBlit).Task;
             await Task.WhenAll(delay, data);
         }
     }
@@ -88,6 +115,8 @@ public class MainViewModel : DependencyObject
 
         _fpsCounter.PushFrame();
         FPS = _fpsCounter.FPS;
+
+        DataWriteMapped();
     }
 
     private void DataSetup()

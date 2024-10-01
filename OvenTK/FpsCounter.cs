@@ -4,7 +4,7 @@ namespace OvenTK.Lib;
 
 public class FpsCounter : IDisposable
 {
-    private const int _movingAverageSampleCount = 60;
+    private const int _movingAverageSampleCount = 10;
 
     private readonly Queue<long> lastFrameTime = [];
     private bool disposedValue;
