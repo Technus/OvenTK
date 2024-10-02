@@ -34,7 +34,7 @@ public class MainViewModel : DependencyObject
     }
     private EggNog _uniform = new(0.1f, 0.3f, 0.8f);
 
-    private BufferData[] _buffers;
+    private BufferBase[] _buffers;
     private VertexArray _vao;
     private Texture _texture;
     private Shader _shader;
@@ -55,14 +55,6 @@ public class MainViewModel : DependencyObject
         DataSetup();
         GLSetup();
         //DataWriteWorker();
-    }
-
-    public void DataWriteBlit()
-    {
-        DataSetup();
-
-        _buffers[2].Write(_positions);
-        _buffers[4].Write(_values);
     }
 
     public void DataWriteMapped()
@@ -94,7 +86,7 @@ public class MainViewModel : DependencyObject
         while(!token.IsCancellationRequested)
         {
             var delay = Task.Delay(1000, token);
-            var data = Dispatcher.InvokeAsync(DataWriteBlit).Task;
+            var data = Dispatcher.InvokeAsync(DataWriteMapped).Task;
             await Task.WhenAll(delay, data);
         }
     }
