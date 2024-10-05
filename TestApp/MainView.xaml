@@ -1,15 +1,31 @@
-﻿<UserControl x:Class="OvenTK.TestApp.MainView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:gl="clr-namespace:OpenTK.Wpf;assembly=GLWpfControl"
-             xmlns:local="clr-namespace:OvenTK.TestApp"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             d:DataContext="{d:DesignInstance local:MainViewModel, IsDesignTimeCreatable=False}">
+﻿<UserControl
+    x:Class="OvenTK.TestApp.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:gl="clr-namespace:OpenTK.Wpf;assembly=GLWpfControl"
+    xmlns:local="clr-namespace:OvenTK.TestApp"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DataContext="{d:DesignInstance local:MainViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
     <Grid>
-        <gl:GLWpfControl x:Name="GLWpfControl"/>
-        <Label Content="{Binding FPS}" HorizontalAlignment="Left" VerticalAlignment="Top" d:Content="REE" Foreground="Yellow"/>
+        <gl:GLWpfControl x:Name="GLWpfControl" />
+        <StackPanel Orientation="Vertical">
+            <Label
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                d:Content="REE"
+                Content="{Binding FPS}"
+                Foreground="Yellow" />
+            <Label
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                d:Content="YEE"
+                Content="{Binding TPS}"
+                Foreground="Yellow" />
+        </StackPanel>
     </Grid>
 </UserControl>

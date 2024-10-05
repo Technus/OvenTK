@@ -1,5 +1,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OvenTK.Lib;
+using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -20,10 +22,12 @@ public class MainViewModel : DependencyObject
         0,1,2,
         0,2,3,
     ];
-    private const int _count = 10_000_000;
-    private int _page = 0;
-    private readonly Vector4[] _positions = new Vector4[_count*3];
-    private readonly Vector4[] _values = new Vector4[_count*3];
+    private const int _count = 12_000_000;
+    private const int _cpus = 5;
+    private const int _pages = 3;
+    private TripleBufferCollaborative _triple = new();
+    private readonly Vector4[] _positions = new Vector4[_count * _pages];
+    private readonly Vector4[] _values = new Vector4[_count * _pages];
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
@@ -39,6 +43,7 @@ public class MainViewModel : DependencyObject
     private Texture _texture;
     private ShaderProgram _shader;
     private readonly FpsCounter _fpsCounter = new();
+    private readonly FpsCounter _tpsCounter = new();
 
     public double FPS
     {
@@ -50,65 +55,84 @@ public class MainViewModel : DependencyObject
     public static readonly DependencyProperty FPSProperty =
         DependencyProperty.Register("FPS", typeof(double), typeof(MainViewModel), new PropertyMetadata(0d));
 
+    public double TPS
+    {
+        get { return (double)GetValue(TPSProperty); }
+        set { SetValue(TPSProperty, value); }
+    }
+
+    // Using a DependencyProperty as the backing store for TPS.  This enables animation, styling, binding, etc...
+    public static readonly DependencyProperty TPSProperty =
+        DependencyProperty.Register("TPS", typeof(double), typeof(MainViewModel), new PropertyMetadata(0d));
+
     public MainViewModel()
     {
-        //DataSetup();
         GLSetup();
-        //DataWriteWorker();
+        DataWriteMapped();
     }
 
-    public void DataWriteMapped()
+    public async Task DataWriteMapped(int cpus = _cpus, CancellationToken token = default)
     {
-        var rand = new Random();
-
-        using (var map = _buffers[2].Map<Vector4>(BufferAccess.WriteOnly))
+        while (!token.IsCancellationRequested)
         {
-            var span = map.Span();
-            for (int i = 0; i < span.Length; i++)
+            if (_count % cpus is not 0)
+                throw new InvalidOperationException();
+
+            _tpsCounter.PushFrame();
+            await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.FPS);
+
+            var w = _triple.BeginUpdate();
+
+            var offset = w * _count;
+            var batch = _count / cpus;
+
+            var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
             {
-                span[i] = new Vector4((float)(rand.NextDouble() - 0.5) * 2, (float)(rand.NextDouble() - 0.5) * 2, 0f, 1f);
-            }
-        }
+                var random = new Random();
+                var start = offset + i * batch;
+                var end = start + batch;
+                for (int j = start; j < end; j++)
+                {
+                    _positions[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
+                    _values[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
+                }
+            }));
 
+            await Task.WhenAll(tasks);
 
-        using (var map = _buffers[4].Map<Vector4>(BufferAccess.WriteOnly))
-        {
-            var span = map.Span();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = new Vector4((float)rand.NextDouble() / 4, (float)rand.NextDouble() / 2, (float)rand.NextDouble(), (float)rand.NextDouble());
-            }
-        }
-    }
-
-    public async Task DataWriteWorker(CancellationToken token = default)
-    {
-        while(!token.IsCancellationRequested)
-        {
-            var delay = Task.Delay(1000, token);
-            var data = Dispatcher.InvokeAsync(DataWriteMapped).Task;
-            await Task.WhenAll(delay, data);
+            if (_triple.FinishUpdate())
+                Debug.WriteLine("CPU TOO FAST");
         }
     }
 
     public void OnRender(TimeSpan t)
     {
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        _shader.Use();
-
-        _vao.Use();
-
-        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _buffers[3]);
-
-        _texture.Use(0);
-
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
 
         _fpsCounter.PushFrame();
         FPS = _fpsCounter.FPS;
+        //DataWriteMapped();
 
-        DataWriteMapped();
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        //using var sync = Sync.Create();
+        var r = _triple.BeginRead();
+
+        using (var map = _buffers[2].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit))
+        {
+            var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
+            span.CopyTo(map.Span());
+        }
+
+        using (var map = _buffers[4].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit))
+        {
+            var span = _values.AsSpan().Slice(r * _count, _count); //map.Span();
+            span.CopyTo(map.Span());
+        }
+
+        if (_triple.FinishRead())
+            Debug.WriteLine("GPU TOO FAST");
+        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count, r * _count);
+        //sync.WaitClient();
     }
 
     private void DataSetup()
@@ -120,7 +144,7 @@ public class MainViewModel : DependencyObject
         }
         for (int i = 0; i < _values.Length; i++)
         {
-            _values[i] = new Vector4((float)rand.NextDouble()/4, (float)rand.NextDouble()/2, (float)rand.NextDouble(), (float)rand.NextDouble());
+            _values[i] = new Vector4((float)rand.NextDouble() / 4, (float)rand.NextDouble() / 2, (float)rand.NextDouble(), (float)rand.NextDouble());
         }
     }
 
@@ -141,13 +165,18 @@ public class MainViewModel : DependencyObject
             VertexArrayAttrib.Create(_buffers[2], 4, VertexAttribType.Float, sizeof(float)*4, false, 1),
             VertexArrayAttrib.Create(_buffers[4], 4, VertexAttribType.Float, sizeof(float)*4, false, 1),
         ]);
+        _vao.Use();
 
         _texture = Texture.CreateFrom(
             Application.GetResourceStream(new Uri(@"\Resources\tower1.png", UriKind.Relative)).Stream);
+        _texture.Use(0);
 
         _shader = ShaderProgram.CreateFrom([
             Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\vertex.glsl", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\fragment.glsl", UriKind.Relative)).Stream),
         ]);
+        _shader.Use();
+
+        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _buffers[3]);
     }
 }

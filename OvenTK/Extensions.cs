@@ -38,6 +38,10 @@ public static class Extensions
         GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
     }
 
+    public static int SizeOf<T>(this BufferBase.Mapping<T> arr) where T : struct => arr.Buffer.Size;
+
+    public static int SizeOf<T>(this BufferBase.RangeMapping<T> arr) where T : struct => arr.Buffer.Size;
+
     public static int SizeOf<T>(this ReadOnlySpan<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
     public static int SizeOf<T>(this Span<T> arr) => arr.Length * Unsafe.SizeOf<T>();
