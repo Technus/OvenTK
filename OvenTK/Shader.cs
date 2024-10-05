@@ -32,14 +32,11 @@ public readonly struct Shader(int handle) : IDisposable
         var handle = GL.CreateShader(type);
         GL.ShaderSource(handle, shader);
 
-        // Try to compile the shader
         GL.CompileShader(handle);
 
-        // Check for compilation errors
         GL.GetShader(handle, ShaderParameter.CompileStatus, out var code);
         if (code != (int)All.True)
         {
-            // We can use `GL.GetShaderInfoLog(shader)` to get information about the error.
             var infoLog = GL.GetShaderInfoLog(handle);
             throw new InvalidOperationException($"Error occurred whilst compiling Shader({shader}).\n\n{infoLog}");
         }

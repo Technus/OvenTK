@@ -24,9 +24,6 @@ public class VertexArray : IDisposable
         GL.BindVertexArray(Handle);
     }
 
-    public static VertexArray Create(BufferBase buffer, IEnumerable<VertexArrayAttrib> attributes)
-        => Create(buffer, attributes.ToArray());
-
     public static VertexArray Create(BufferBase buffer, IReadOnlyList<VertexArrayAttrib> attributes)
     {
         GL.CreateVertexArrays(1, out int handle);

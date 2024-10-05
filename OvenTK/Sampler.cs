@@ -6,14 +6,14 @@ public class Sampler : IDisposable
 {
     private bool _disposed;
 
+    public int Handle { get; protected set; }
+
     protected Sampler(int handle)
     {
         Handle = handle;
     }
 
     public static implicit operator int(Sampler? data) => data?.Handle ?? default;
-
-    public int Handle { get; protected set; }
 
     public static Sampler Create()
     {
