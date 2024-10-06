@@ -17,11 +17,74 @@ public class BufferData : BufferBase, IDisposable
         Hint = hint;
     }
 
-    public void Resize(int size)
+    public void Resize(int size) => Resize(size, Hint);
+    public void Resize(int size, BufferUsageHint hint)
     {
         Size = size;
-        GL.NamedBufferData(Handle, size, default, Hint);
+        GL.NamedBufferData(Handle, Size, default, hint);
     }
+
+    public unsafe void Recreate<V>(ref readonly Memory<V> memory) => Recreate(in memory, Hint);
+    public unsafe void Recreate<V>(ref readonly Memory<V> memory, BufferUsageHint hint)
+    {
+        Size = memory.SizeOf();
+        using var pin = memory.Pin();
+        GL.NamedBufferData(Handle, Size, (nint)pin.Pointer, hint);
+    }
+
+    public unsafe void Recreate<V>(ref readonly ReadOnlyMemory<V> memory) => Recreate(in memory, Hint);
+    public unsafe void Recreate<V>(ref readonly ReadOnlyMemory<V> memory, BufferUsageHint hint)
+    {
+        Size = memory.SizeOf();
+        using var pin = memory.Pin();
+        GL.NamedBufferData(Handle, Size, (nint)pin.Pointer, hint);
+    }
+
+    public unsafe void Recreate<V>(ref readonly Span<V> memory) where V : struct => Recreate(in memory, Hint);
+    public unsafe void Recreate<V>(ref readonly Span<V> memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        fixed (V* p = memory)
+            GL.NamedBufferData(Handle, Size, (nint)p, hint);
+    }
+
+    public unsafe void Recreate<V>(ref readonly ReadOnlySpan<V> memory) where V : struct => Recreate(in memory, Hint);
+    public unsafe void Recreate<V>(ref readonly ReadOnlySpan<V> memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        fixed (V* p = memory)
+            GL.NamedBufferData(Handle, Size, (nint)p, hint);
+    }
+
+    public unsafe void Recreate<V>(ref readonly V memory) where V : struct => Recreate(in memory, Hint);
+    public unsafe void Recreate<V>(ref readonly V memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        fixed (V* p = &memory)
+            GL.NamedBufferData(Handle, Size, (nint)p, hint);
+    }
+
+    public unsafe void Recreate<V>(V[] memory) where V : struct => Recreate(memory, Hint);
+    public unsafe void Recreate<V>(V[] memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        GL.NamedBufferData(Handle, Size, memory, hint);
+    }
+
+    public unsafe void Recreate<V>(V[,] memory) where V : struct => Recreate(memory, Hint);
+    public unsafe void Recreate<V>(V[,] memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        GL.NamedBufferData(Handle, Size, memory, hint);
+    }
+
+    public unsafe void Recreate<V>(V[,,] memory) where V : struct => Recreate(memory, Hint);
+    public unsafe void Recreate<V>(V[,,] memory, BufferUsageHint hint) where V : struct
+    {
+        Size = memory.SizeOf();
+        GL.NamedBufferData(Handle, Size, memory, hint);
+    }
+
 
     /// <summary>
     /// Creates Buffers without data
@@ -60,7 +123,7 @@ public class BufferData : BufferBase, IDisposable
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static BufferData Create(int size, BufferUsageHint hint = _default)
+    public static BufferData Create(int size = default, BufferUsageHint hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         GL.NamedBufferData(handle, size, default, hint);
