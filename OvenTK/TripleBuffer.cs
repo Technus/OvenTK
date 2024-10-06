@@ -41,6 +41,23 @@ public class TripleBuffer<T>
 
     public WriteAccess<T> Write() => new(this);
 
+    public bool IsStale
+    {
+        get
+        {
+            try
+            {
+                _staleSemaphore.Wait();
+                return _stale is 1;
+            }
+            finally
+            {
+                _staleSemaphore.Release();
+            }
+
+        }
+    }
+
     public readonly struct ReadAccess<V> : IDisposable
     {
         public int Id { get; }
