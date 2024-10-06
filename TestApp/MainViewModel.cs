@@ -23,7 +23,7 @@ public class MainViewModel : DependencyObject
         0,2,3,
     ];
     private const int _count = 12_000_000;
-    private const int _cpus = 5;
+    private const int _cpus = 4;
     private const int _pages = 3;
     private TripleBufferCollaborative _triple = new();
     private readonly Vector4[] _positions = new Vector4[_count * _pages];
@@ -105,9 +105,11 @@ public class MainViewModel : DependencyObject
         }
     }
 
-    public void OnRender(TimeSpan t)
-    {
+    [DllImport("msvcrt.dll", SetLastError = false)]
+    static extern nint memcpy(nint dest, nint src, int count);
 
+    public unsafe void OnRender(TimeSpan t)
+    {
         _fpsCounter.PushFrame();
         FPS = _fpsCounter.FPS;
         //DataWriteMapped();
@@ -117,16 +119,24 @@ public class MainViewModel : DependencyObject
         //using var sync = Sync.Create();
         var r = _triple.BeginRead();
 
-        using (var map = _buffers[2].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit))
+        using (var map = _buffers[2].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
         {
             var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
-            span.CopyTo(map.Span());
+            //span.CopyTo(map.Span());
+
+            fixed(void* src = span)
+            fixed(void* dest = map.Span())
+                memcpy((nint)dest, (nint)src, _count);
         }
 
-        using (var map = _buffers[4].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit))
+        using (var map = _buffers[4].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
         {
             var span = _values.AsSpan().Slice(r * _count, _count); //map.Span();
-            span.CopyTo(map.Span());
+            //span.CopyTo(map.Span());
+
+            fixed (void* src = span)
+            fixed (void* dest = map.Span())
+                memcpy((nint)dest, (nint)src, _count);
         }
 
         if (_triple.FinishRead())
