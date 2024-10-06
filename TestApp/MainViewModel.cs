@@ -73,6 +73,8 @@ public class MainViewModel : DependencyObject
     {
         while (!token.IsCancellationRequested)
         {
+            var sw = Stopwatch.GetTimestamp();
+
             if (_count % cpus is not 0)
                 throw new InvalidOperationException();
 
@@ -98,6 +100,9 @@ public class MainViewModel : DependencyObject
             }));
 
             await Task.WhenAll(tasks);
+
+            var td = FpsCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+            Debug.WriteLine($"Tick Time {td}");
         }
     }
 
@@ -106,6 +111,8 @@ public class MainViewModel : DependencyObject
 
     public unsafe void OnRender(TimeSpan t)
     {
+        var sw = Stopwatch.GetTimestamp();
+
         _fpsCounter.PushFrame();
         FPS = _fpsCounter.FPS;
         //DataWriteMapped();
@@ -142,6 +149,9 @@ public class MainViewModel : DependencyObject
         */
         GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
         //sync.WaitClient();
+
+        var td = FpsCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+        Debug.WriteLine($"Draw Time {td}");
     }
 
     private void GLSetup()
@@ -151,9 +161,9 @@ public class MainViewModel : DependencyObject
         _buffers = [
             BufferStorage.CreateFrom(_vertices),
             BufferStorage.CreateFrom(_indices),
-            BufferData.Create(0, BufferUsageHint.DynamicDraw),
+            BufferData.Create(_count * Unsafe.SizeOf<Vector4>(), BufferUsageHint.StreamDraw),
             BufferStorage.CreateFrom(ref _uniform),
-            BufferData.Create(0, BufferUsageHint.DynamicDraw),
+            BufferData.Create(_count * Unsafe.SizeOf<Vector4>(), BufferUsageHint.StreamDraw),
         ];
 
         _vao = VertexArray.Create(_buffers[1], [
