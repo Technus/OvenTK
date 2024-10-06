@@ -40,8 +40,8 @@ public class MainViewModel : DependencyObject
     private VertexArray _vao;
     private Texture _texture;
     private ShaderProgram _shader;
-    private readonly FpsCounter _fpsCounter = new();
-    private readonly FpsCounter _tpsCounter = new();
+    private readonly FrequencyCounter _fpsCounter = new();
+    private readonly FrequencyCounter _tpsCounter = new();
 
     public double FPS
     {
@@ -80,8 +80,8 @@ public class MainViewModel : DependencyObject
 
             //if (_triple.IsStale)
             {
-                _tpsCounter.PushFrame();
-                await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.FPS);
+                _tpsCounter.PushEvent();
+                await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.Frequency);
 
                 using var w = _triple.Write();
                 var b = w.Buffer;
@@ -104,7 +104,7 @@ public class MainViewModel : DependencyObject
             }
             //else await Task.Delay(10);
 
-            var td = FpsCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+            var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
         }
     }
@@ -116,8 +116,8 @@ public class MainViewModel : DependencyObject
     {
         var sw = Stopwatch.GetTimestamp();
 
-        _fpsCounter.PushFrame();
-        FPS = _fpsCounter.FPS;
+        _fpsCounter.PushEvent();
+        FPS = _fpsCounter.Frequency;
         //DataWriteMapped();
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -156,7 +156,7 @@ public class MainViewModel : DependencyObject
         GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
         //sync.WaitClient();
 
-        var td = FpsCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+        var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
         Debug.WriteLine($"Draw Time {td}");
     }
 
