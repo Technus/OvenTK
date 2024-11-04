@@ -2,8 +2,24 @@
 
 public abstract class BufferBase
 {
+    protected const DrawElementsType _drawTypeNone = default;
+    protected DrawElementsType _drawElementsType = _drawTypeNone;
+
     public int Handle { get; protected set; }
     public int Size { get; protected set; }
+    public DrawElementsType DrawType
+    {
+        get => _drawElementsType is not _drawTypeNone ? _drawElementsType : throw new InvalidOperationException("Unknown draw (indices) type");
+        set => _drawElementsType = GetDrawType(value);
+    }
+
+    public int DrawCount => _drawElementsType switch
+    {
+        DrawElementsType.UnsignedByte => Size,
+        DrawElementsType.UnsignedShort => Size / 2,
+        DrawElementsType.UnsignedInt => Size / 4,
+        _ => throw new InvalidOperationException("Unknown draw (indices) type"),
+    };
 
     public static implicit operator int(BufferBase? data) => data?.Handle ?? 0;
 
@@ -211,4 +227,36 @@ public abstract class BufferBase
         public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
         public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
     }
+
+    public static DrawElementsType GetDrawType<T>(DrawElementsType requested, DrawElementsType current)
+    {
+        if (requested is not _drawTypeNone)
+            return requested;
+        requested = GetDrawType<T>();
+        if (requested is not _drawTypeNone)
+            return requested;
+        return current;
+    }
+
+    public static DrawElementsType GetDrawType<T>(DrawElementsType requested) => 
+        requested is _drawTypeNone ? GetDrawType<T>() : requested;
+
+    public static DrawElementsType GetDrawType<T>() => Unsafe.SizeOf<T>() switch
+    {
+        1 => DrawElementsType.UnsignedByte,
+        2 => DrawElementsType.UnsignedShort,
+        4 => DrawElementsType.UnsignedInt,
+        _ => _drawTypeNone,
+    };
+
+    public static DrawElementsType GetDrawType(DrawElementsType requested, DrawElementsType current) => 
+        requested is _drawTypeNone ? current : requested;
+
+    public static DrawElementsType GetDrawType(DrawElementsType requested) => requested switch
+    {
+        DrawElementsType.UnsignedByte => DrawElementsType.UnsignedByte,
+        DrawElementsType.UnsignedShort => DrawElementsType.UnsignedShort,
+        DrawElementsType.UnsignedInt => DrawElementsType.UnsignedInt,
+        _ => _drawTypeNone,
+    };
 }

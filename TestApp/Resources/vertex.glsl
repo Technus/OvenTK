@@ -9,15 +9,17 @@ layout (location = 0) out vec2 texPos; //to next shader
 layout (location = 1) out vec4 color; //to next shader
 
 layout (binding = 0) uniform Uniform {
-    vec3 eggNog;
     mat4 projection;
     mat4 view;
+    vec3 eggNog;
+    float count;
 };
 
 void main()
 {
+    float z = gl_InstanceID/(count * 10.0);
     //the gl_Position (clip-space output position) here must fall between [-1,1],[-1,1],[-1,1],[for normalization, usually: 1]
-    gl_Position = vec4(aVertice, 0, 1.0);
+    gl_Position = vec4(aVertice, z, 1.0);
     gl_Position.x /= 25;
     gl_Position.y /= 25;
     gl_Position.x += aInstancePosition.x;
