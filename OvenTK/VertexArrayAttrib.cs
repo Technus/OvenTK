@@ -71,7 +71,7 @@ public class VertexArrayAttrib : IDisposable
                 if (Normalize)
                     GL.VertexArrayAttribFormat(vertexArray, Index, Size, Type, true, 0);
                 else
-                    GL.VertexArrayAttribLFormat(vertexArray, Index, Size, VertexAttribType.Double, 0);
+                    GL.VertexArrayAttribLFormat(vertexArray, Index, Size, Type, 0);//VertexAttribDoubleType
                 break;
             case VertexAttribType.Fixed:
             case VertexAttribType.UnsignedInt2101010Rev:
