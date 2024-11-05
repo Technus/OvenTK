@@ -61,4 +61,22 @@ public static class Extensions
     public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
 
     public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+
+    public static float[] MakeRectVertices(float w, float h)
+    {
+        w /= 2;
+        h /= 2;
+        return [
+            -w,-h,
+            +w,-h,
+            -w,+h,
+            +w,+h,
+        ];
+    }
+
+    public static byte[] MakeRectIndices() =>
+    [
+        1,3,2,
+        2,1,0,
+    ];
 }

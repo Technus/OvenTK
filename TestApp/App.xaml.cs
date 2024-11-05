@@ -15,6 +15,7 @@ public partial class App : Application
         
         view.DataContext = viewModel;
         view.GLWpfControl.Render += viewModel.OnRender;
+        view.GLWpfControl.SizeChanged += viewModel.OnResize;
 
         var window = new MainWindow();
         window.DataContext = view;
