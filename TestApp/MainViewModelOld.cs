@@ -1,6 +1,5 @@
 using OpenTK.Graphics.OpenGL4;
 using OvenTK.Lib;
-using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;

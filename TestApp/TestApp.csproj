@@ -33,11 +33,11 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <None Remove="Resources\digit.frag" />
+	  <None Remove="Resources\digit.vert" />
 	  <None Remove="Resources\digits.png" />
-	  <None Remove="Resources\fragmentD.glsl" />
-	  <None Remove="Resources\fragmentOld.glsl" />
-	  <None Remove="Resources\vertexD.glsl" />
-	  <None Remove="Resources\vertexOld.glsl" />
+	  <None Remove="Resources\test.frag" />
+	  <None Remove="Resources\test.vert" />
 	</ItemGroup>
 
 	<ItemGroup>

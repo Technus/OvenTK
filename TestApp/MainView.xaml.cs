@@ -1,5 +1,4 @@
-﻿using OvenTK.Lib;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace OvenTK.TestApp;
 
