@@ -15,6 +15,9 @@
                          HorizontalAlignment="Stretch"
                          VerticalAlignment="Stretch"/>
         <StackPanel Orientation="Vertical">
+            <Slider Value="{Binding X}" Minimum="-4000" Maximum="4000"/>
+            <Slider Value="{Binding Y}" Minimum="-4000" Maximum="4000"/>
+            <Slider Value="{Binding ScaleLog}" Minimum="-1.2" Maximum="0"/>
             <Label
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
