@@ -43,13 +43,24 @@ public class VertexArray : IDisposable
     /// <summary>
     /// Creates the vertex array
     /// </summary>
-    /// <param name="buffer">buffer of indices</param>
+    /// <param name="elementBuffer">buffer of indices</param>
     /// <param name="attributes">definition of additional parameters (vertices,colors,other user data,etc.)</param>
     /// <returns></returns>
-    public static VertexArray Create(BufferBase buffer, IReadOnlyList<VertexArrayAttrib> attributes)
+    public static VertexArray Create(BufferBase elementBuffer, IReadOnlyList<VertexArrayAttrib> attributes)
+    {
+        var vao = Create(attributes);
+        GL.VertexArrayElementBuffer(vao.Handle, elementBuffer.Handle);
+        return vao;
+    }
+
+    /// <summary>
+    /// Creates the vertex array
+    /// </summary>
+    /// <param name="attributes">definition of additional parameters (vertices,colors,other user data,etc.)</param>
+    /// <returns></returns>
+    public static VertexArray Create(IReadOnlyList<VertexArrayAttrib> attributes)
     {
         GL.CreateVertexArrays(1, out int handle);
-        GL.VertexArrayElementBuffer(handle, buffer.Handle);
         var vao = new VertexArray(handle, attributes);
         for (int i = 0; i < attributes.Count; i++)
             attributes[i].Assign(vao, i);

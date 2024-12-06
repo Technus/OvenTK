@@ -189,6 +189,21 @@ public static partial class Extensions
     ];
 
     /// <summary>
+    /// Creates an array filled with consecutive numbers starting from 0 up to <paramref name="count"/> exclusive
+    /// </summary>
+    /// <param name="count"></param>
+    /// <returns></returns>
+    public static byte[] MakeLineIndices(byte count)
+    {
+        var result = new byte[count];
+        for (byte i = 0; i < count; i++)
+        {
+            result[i] = i;
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Helper for Stopwatch Elapsed timestamp difference calculation
     /// </summary>
     /// <param name="startingTimestamp"></param>

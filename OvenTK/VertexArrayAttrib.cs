@@ -66,6 +66,12 @@ public class VertexArrayAttrib
     public static implicit operator int(VertexArrayAttrib data) => data.Index;
 
     /// <summary>
+    /// To put a blank in the <see cref="VertexArray"/>
+    /// </summary>
+    /// <returns></returns>
+    public static VertexArrayAttrib CreateSkip() => new(default, 0, 0, 0, false, 0);
+
+    /// <summary>
     /// Create a parameter definition
     /// </summary>
     /// <param name="size"></param>
@@ -97,11 +103,11 @@ public class VertexArrayAttrib
 
     internal void Assign(VertexArray vertexArray, int index)
     {
-        if (Index != default)
+        if (Index is not 0)
             throw new InvalidOperationException("Already set");
 
         Index = index;
-        GL.EnableVertexArrayAttrib(vertexArray, Index);
+
         switch (Type)
         {
             case VertexAttribType.Byte:
@@ -110,26 +116,39 @@ public class VertexArrayAttrib
             case VertexAttribType.UnsignedShort:
             case VertexAttribType.Int:
             case VertexAttribType.UnsignedInt:
-                if(Normalize)
+                GL.EnableVertexArrayAttrib(vertexArray, Index);
+
+                if (Normalize)
                     GL.VertexArrayAttribFormat(vertexArray, Index, Size, Type, true, 0);
                 else
                     GL.VertexArrayAttribIFormat(vertexArray, Index, Size, Type, 0);//VertexAttribIntegerType
                 break;
+
             case VertexAttribType.Float:
             case VertexAttribType.HalfFloat:
+                GL.EnableVertexArrayAttrib(vertexArray, Index);
+
                 GL.VertexArrayAttribFormat(vertexArray, Index, Size, Type, Normalize, 0);
                 break;
+
             case VertexAttribType.Double:
+                GL.EnableVertexArrayAttrib(vertexArray, Index);
+
                 if (Normalize)
                     GL.VertexArrayAttribFormat(vertexArray, Index, Size, Type, true, 0);
                 else
                     GL.VertexArrayAttribLFormat(vertexArray, Index, Size, Type, 0);//VertexAttribDoubleType
                 break;
+
             case VertexAttribType.Fixed:
             case VertexAttribType.UnsignedInt2101010Rev:
             case VertexAttribType.UnsignedInt10F11F11FRev:
             case VertexAttribType.Int2101010Rev:
                 throw new NotSupportedException("I have no idea how to set it up");
+
+            case 0:
+                GL.DisableVertexArrayAttrib(vertexArray, Index);//disable when type is default, it is a blank
+                return;
         }
         GL.VertexArrayAttribBinding(vertexArray, Index, Index);
         GL.VertexArrayVertexBuffer(vertexArray, Index, Buffer, default, Stride);

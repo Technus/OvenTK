@@ -19,6 +19,8 @@ public class MainViewModel : DependencyObject
     /// </summary>
     private const int _cpus = 4;
 
+    private const int _beziers = 1000;
+
     /// <summary>
     /// rectangular boxes count
     /// </summary>
@@ -73,20 +75,20 @@ public class MainViewModel : DependencyObject
 
     private static readonly Random _random = new();
 
-    private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
-    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite;
-    private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite;
+    private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices, _sLineIndices;
+    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier;
+    private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite, _vBezier, _vBezier2, _vPolyline2;
     private Texture _tDigits;
     private BitmapFont _fConsolas;
     private SpriteSheet<Sprite> _sSprites;
-    private ShaderProgram _pRect, _pDigits, _pText, _pSprite;
+    private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2;
     private bool _invalidated = true;
     private Uniform _uniform = new()
     {
         CameraScale = 1,
         InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
     };
-    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet<Sprite>.Sprite[] sprites)> _tTriple;
+    private TripleBufferSimple<(PosRot[] xyar, ColorARGB[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers)> _tTriple;
 
     /// <summary>
     /// Box/Container position and rotation
@@ -148,6 +150,23 @@ public class MainViewModel : DependencyObject
         /// Which number from <see cref="IdProg"/> are we rendering
         /// </summary>
         public int DigitIndex { get; set; }
+    }
+
+    private struct CubicBezierPatch
+    {
+        public Vector2 Point1 { get; set; }
+        public Vector2 Point2 { get; set; }
+        public Vector2 Point3 { get; set; }
+        public Vector2 Point4 { get; set; }
+    }
+
+    private struct ColorARGB
+    {
+        public int Color { get; set; }
+
+        public static implicit operator int(ColorARGB color) => color.Color;
+
+        public static implicit operator ColorARGB(int color) => new() { Color = color };
     }
 
     public double FPS
@@ -233,7 +252,7 @@ public class MainViewModel : DependencyObject
     /// <exception cref="InvalidOperationException"></exception>
     public async Task DataWrite(int cpus = _cpus, CancellationToken token = default)
     {
-        if (_count % cpus is not 0)
+        if (_count % cpus is not 0 || _beziers % cpus is not 0)
             throw new InvalidOperationException();
 
         while (!token.IsCancellationRequested)
@@ -247,42 +266,80 @@ public class MainViewModel : DependencyObject
 
                 using var w = _tTriple.Write();
                 var b = w.Buffer;
-
-                var batch = _count / cpus;
                 var tasks = Enumerable.Range(0, cpus).Select(i => Task.Run(() =>//split to different CPUs
                 {
-                    var start = i * batch;
-                    var end = start + batch;
-                    for (int j = start; j < end; j++)
+                    ProcessBoxes();
+                    ProcessBeziers();
+
+                    void ProcessBoxes()
                     {
-                        b.xyar[j] = new PosRot
+                        var batch = _count / cpus;
+                        var start = i * batch;
+                        var end = start + batch;
+                        for (int j = start; j < end; j++)
                         {
-                            X = (float)(_random.NextDouble() - 0.5) * 8000, 
-                            Y = (float)(_random.NextDouble() - 0.5) * 8000, 
-                            Angle = (float)((_random.NextDouble() - 0.5) * (Math.PI)),
-                        };
-                        b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
-                        b.cip_[j] = new IdProg { 
-                            Id = j, 
-                            Program = j * 100 
-                        };
+                            b.xyar[j] = new PosRot
+                            {
+                                X = (float)(_random.NextDouble() - 0.5) * 8000,
+                                Y = (float)(_random.NextDouble() - 0.5) * 8000,
+                                Angle = (float)((_random.NextDouble() - 0.5) * (Math.PI)),
+                            };
+                            b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
+                            b.cip_[j] = new IdProg
+                            {
+                                Id = j,
+                                Program = j * 100
+                            };
 
-                        //Special handling for font rendering, requires precomputing the offset text start vectors
-                        var rotation = b.xyar[j].Angle;
-                        var cos = Math.Cos(rotation);
-                        var sin = Math.Sin(rotation);
-                        var (dx, dy) = (-59,-24);//pre rotation
-                        var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
-                        //then text is written to buffer array
-                        _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X+ rdx), (float)(b.xyar[j].Y+ rdy), rotation, _random.Next(10000000).ToString().AsSpan());
+                            //Special handling for font rendering, requires precomputing the offset text start vectors
+                            var rotation = b.xyar[j].Angle;
+                            var cos = Math.Cos(rotation);
+                            var sin = Math.Sin(rotation);
+                            var (dx, dy) = (-59, -24);//pre rotation
+                            var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
+                                                                                        //then text is written to buffer array
+                            _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X + rdx), (float)(b.xyar[j].Y + rdy), rotation, _random.Next(10000000).ToString().AsSpan());
 
-                        b.sprites[j * _spritesPerInstance] = new()
+                            b.sprites[j * _spritesPerInstance] = new()
+                            {
+                                X = b.xyar[j].X,
+                                Y = b.xyar[j].Y,
+                                Angle = b.xyar[j].Angle,
+                                Id = (float)_random.GetRandom<Sprite>(.5f),
+                            };
+                        }
+                    }
+                    void ProcessBeziers()
+                    {
+                        var batchBezier = _beziers / cpus;
+                        var start = i * batchBezier;
+                        var end = start + batchBezier;
+                        for (int j = start; j < end; j++)
                         {
-                            X = b.xyar[j].X,
-                            Y = b.xyar[j].Y,
-                            Angle = b.xyar[j].Angle,
-                            Id = (float)_random.GetRandom<Sprite>(.5f),
-                        };
+                            b.beziers[j] = new()
+                            {
+                                Point2 = new()
+                                {
+                                    X = (float)(_random.NextDouble() - 0.5) * 8000,
+                                    Y = (float)(_random.NextDouble() - 0.5) * 8000,
+                                },
+                                Point3 = new()
+                                {
+                                    X = (float)(_random.NextDouble() - 0.5) * 8000,
+                                    Y = (float)(_random.NextDouble() - 0.5) * 8000,
+                                },
+                            };
+                            b.beziers[j].Point1 = new()
+                            {
+                                X = b.beziers[j].Point2.X + (float)(_random.NextDouble() - 0.5) * 2000,
+                                Y = b.beziers[j].Point2.Y + (float)(_random.NextDouble() - 0.5) * 2000,
+                            };
+                            b.beziers[j].Point4 = new()
+                            {
+                                X = b.beziers[j].Point3.X + (float)(_random.NextDouble() - 0.5) * 2000,
+                                Y = b.beziers[j].Point3.Y + (float)(_random.NextDouble() - 0.5) * 2000,
+                            };
+                        }
                     }
                 }));
 
@@ -338,10 +395,17 @@ public class MainViewModel : DependencyObject
         //size of the hacky digit to render
         _sDigitVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(18, 32));
 
+        //Common indices for bezier segment
+        _sLineIndices = BufferStorage.CreateFrom(Extensions.MakeLineIndices(4));
+
         //box/container data buffers
         _dXYAngle = BufferData.Create(_count * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
-        _dColor = BufferData.Create(_count * Unsafe.SizeOf<int>(), BufferUsageHint.StreamDraw);
+        _dColor = BufferData.Create(_count * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
         _dIdProg = BufferData.Create(_count * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
+
+        //line/bezier
+        _dXYBezier = BufferData.Create(_beziers * Unsafe.SizeOf<CubicBezierPatch>(), BufferUsageHint.StreamDraw);
+        _dColorBezier = BufferData.Create(_beziers * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
 
         //Create 'fixed' size buffer for text
         _dXYAngleBFChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
@@ -351,10 +415,11 @@ public class MainViewModel : DependencyObject
         //Triple buffer for data writing
         _tTriple = new(() => (
                 new PosRot[_count], 
-                new int[_count], 
+                new ColorARGB[_count], 
                 new IdProg[_count],
                 BitmapFont.MakeArray(_dXYAngleBFChar),
-                SpriteSheet.MakeArray(_dXYAngleSSSprite)))
+                SpriteSheet.MakeArray(_dXYAngleSSSprite),
+                new CubicBezierPatch[_beziers]))
             ;//will be streamed to _d*
 
         //a single instance data for render pipeline
@@ -385,6 +450,18 @@ public class MainViewModel : DependencyObject
             VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
             VertexArrayAttrib.Create(_dXYAngleSSSprite,     4, VertexAttribType.Float,        divisor: 1),
         ]);
+        _vBezier = VertexArray.Create(_sLineIndices, [
+            VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
+        ]);
+        _vBezier2 = VertexArray.Create(_sLineIndices, [
+            VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
+        ]);
+        _vPolyline2 = VertexArray.Create(_sLineIndices, [
+            VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float,        divisor:0),
+            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
+        ]);
 
         //shader program definitions
         _pRect = ShaderProgram.CreateFrom([
@@ -402,6 +479,22 @@ public class MainViewModel : DependencyObject
         _pSprite = ShaderProgram.CreateFrom([
             Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\sprite.vert", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\sprite.frag", UriKind.Relative)).Stream),
+        ]);
+        _pBezier = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.TessControlShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier.tesc", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.TessEvaluationShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier.tese", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier.frag", UriKind.Relative)).Stream),
+        ]);
+        _pBezier2 = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier2.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.GeometryShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier2.geom", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\bezier2.frag", UriKind.Relative)).Stream),
+        ]);
+        _pPolyline2 = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\polyline2.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.GeometryShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\polyline.geom", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\polyline2.frag", UriKind.Relative)).Stream),
         ]);
     }
 
@@ -423,6 +516,7 @@ public class MainViewModel : DependencyObject
             _dIdProg.Recreate(b.cip_);
             _dXYAngleBFChar.Recreate(b.text);
             _dXYAngleSSSprite.Recreate(b.sprites);
+            _dXYBezier.Recreate(b.beziers);
 
             _invalidated = true;//and invalidate
         }
@@ -430,8 +524,30 @@ public class MainViewModel : DependencyObject
         if (!_invalidated)//but actually render when invalidated otherwise keep same frame
             return;
 
-        GL.Enable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//clear screen
+
+
+        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+        _pBezier2.Use();
+        _vBezier2.Use();
+
+        _uniform.InstanceBase = default;
+        _uniform.InstanceCount = _beziers;
+        _dUniform.Recreate(ref _uniform);
+
+        GL.DrawArrays(PrimitiveType.LinesAdjacency, 0, _beziers * _sLineIndices.DrawCount);//since we do not draw same verices over and over it is not instanced rendering
+
+        GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
+
+        _pPolyline2.Use();
+        _vPolyline2.Use();
+        GL.DrawArrays(PrimitiveType.Lines, 0, _beziers * _sLineIndices.DrawCount);
+
+
+        GL.Enable(EnableCap.DepthTest);
+        GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
 
         if (_uniform.CameraScale >= 0.0625)//draw boxes
         {
