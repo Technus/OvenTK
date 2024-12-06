@@ -5,6 +5,7 @@ using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+#pragma warning disable CS8618, S1450
 
 namespace OvenTK.TestApp;
 /// <summary>
@@ -75,8 +76,8 @@ public class MainViewModel : DependencyObject
     private const int _spritesPerInstance = 4;
 
     [ThreadStatic]
-    public static Random _random;
-    public static Random Random => _random ??= new();
+    private static Random _random;
+    private static Random Random => _random ??= new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
     private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;

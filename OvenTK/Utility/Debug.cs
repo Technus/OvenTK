@@ -2,6 +2,9 @@
 using System.Text;
 
 namespace OvenTK.Lib;
+/// <summary>
+/// Helper for OpenGL Debugging
+/// </summary>
 public static class DebugExtensions
 {
     /// <summary>

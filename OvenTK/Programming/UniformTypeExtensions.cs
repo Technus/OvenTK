@@ -1,17 +1,58 @@
 ﻿namespace OvenTK.Lib;
 
+/// <summary>
+/// Helper for <see cref="ActiveUniformType"/>
+/// </summary>
 public static class UniformTypeExtensions
 {
+    /// <summary>
+    /// Overall type groups for uniforms
+    /// </summary>
     public enum UniformType
     {
+        /// <summary>
+        /// Unspecified
+        /// </summary>
         None,
+        /// <summary>
+        /// A simple value like float or matrix
+        /// </summary>
         Value,
+        /// <summary>
+        /// Some form of *Sampler*
+        /// </summary>
         Sampler,
+        /// <summary>
+        /// Some form of *Image*
+        /// </summary>
         Image,
-        Counter
+        /// <summary>
+        /// Atomic uint counter
+        /// </summary>
+        Counter,
     }
 
-    public static UniformType GetType(this ActiveUniformType uniformType) => uniformType switch
+    /// <summary>
+    /// Check if that is an typical uniform value
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsValue(this UniformType type) => type is UniformType.Value;
+
+    /// <summary>
+    /// Check if that is some sort of texture/sampler/image uniform
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsTexture(this UniformType type) => type is UniformType.Sampler or UniformType.Image;
+
+    /// <summary>
+    /// Returns <see cref="UniformType"/> group matching <paramref name="uniformType"/>
+    /// </summary>
+    /// <param name="uniformType"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static UniformType GetOverallType(this ActiveUniformType uniformType) => uniformType switch
     {
         ActiveUniformType.Bool or
         ActiveUniformType.BoolVec2 or
