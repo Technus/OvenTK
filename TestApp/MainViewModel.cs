@@ -15,10 +15,12 @@ public class MainViewModel : DependencyObject
     private readonly FrequencyCounter _tpsCounter = new();
 
     private const int _cpus = 4;
-    private const int _countDefault = 8;/// must distribute equally across <see cref="_cpus"/>
+    private const int _countDefault = 20000;/// must distribute equally across <see cref="_cpus"/>
 
     private const int _boxWidth = 80;
     private const int _boxHeight = 50;
+
+    private static Random _random = new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sRectIndices;
     private BufferData _sUniform, _dXYAngleRatio, _dColor, _dIdProgram;
@@ -94,13 +96,12 @@ public class MainViewModel : DependencyObject
                 var batch = _uniform.InstanceCount / cpus;
                 var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
                 {
-                    var random = new Random();
                     var start = (uint)(i * batch);
                     var end = start + batch;
                     for (uint j = start; j < end; j++)
                     {
-                        b.xyar[j] = new Vector4((float)(random.NextDouble() - 0.5) * 200, (float)(random.NextDouble() - 0.5) * 200, 0f, 0.5f);
-                        b.color[j] = Color.FromArgb(255, 0, (int)(random.NextDouble() / 2 * 255), (int)(random.NextDouble() * 255)).ToArgb();
+                        b.xyar[j] = new Vector4((float)(_random.NextDouble() - 0.5) * 2000, (float)(_random.NextDouble() - 0.5) * 2000, 0f, 0.5f);
+                        b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
                         b.cip_[j] = new IdProg { Id = j, Program = j*10};
                     }
                 }));
@@ -111,15 +112,18 @@ public class MainViewModel : DependencyObject
             var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
 
-            await Task.Delay(1000).ConfigureAwait(false);
+            await Task.Delay(10).ConfigureAwait(false);
         }
     }
 
     private void GLSetup()
     {
         GL.ClearColor(Color.LightGray);
+
         GL.Enable(EnableCap.DepthTest);
         GL.DepthFunc(DepthFunction.Lequal);
+
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
         _sRectIndices = BufferStorage.CreateFrom(Extensions.MakeRectIndices());
         _sBoxVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(_boxWidth, _boxHeight));
@@ -184,8 +188,10 @@ public class MainViewModel : DependencyObject
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+
         _vBox.Use();
         _pRect.Use();
+        GL.Disable(EnableCap.Blend);
 
         _uniform.InstanceBase = 0;
         _sUniform.Recreate(ref _uniform);
@@ -195,6 +201,7 @@ public class MainViewModel : DependencyObject
 
         _vDigits.Use();
         _pDigits.Use();
+        GL.Enable(EnableCap.Blend);
 
         const int idDigits = 4;
         for (int i = 0; i < idDigits; i++)//foreach container id digit
