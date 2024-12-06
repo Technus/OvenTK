@@ -1,9 +1,11 @@
 ﻿namespace OvenTK.OvenTK;
 
-public class BufferStorage(int handle, int bytes, BufferStorageFlags flags)
+public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) : IDisposable
 {
+    private bool _disposed;
+
     public int Handle => handle;
-    public int Size => bytes;
+    public int Size => byteSize;
     public BufferStorageFlags Flags => flags;
 
     /// <summary>
@@ -116,5 +118,29 @@ public class BufferStorage(int handle, int bytes, BufferStorageFlags flags)
         var size = memory.SizeOf();
         GL.NamedBufferStorage(handle, size, memory, hint);
         return new(handle, size, hint);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                byteSize = default;
+            }
+
+            GL.DeleteBuffers(1, ref handle);
+            handle = default;
+
+            _disposed = true;
+        }
+    }
+
+    ~BufferStorage() => Dispose(disposing: false);
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
