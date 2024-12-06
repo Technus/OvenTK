@@ -9,48 +9,66 @@ namespace OvenTK.Lib;
 public class ShaderProgram : IDisposable
 {
     private bool _disposed;
-    private Dictionary<string, int>? _uniformLocations;
+    private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformLocations;
+    private Dictionary<string, (int location, int size, ActiveAttribType type)>? _attributeLocations;
 
-    protected ShaderProgram(int handle)
-    {
-        Handle = handle;
-    }
+    protected ShaderProgram(int handle) => Handle = handle;
 
     public static implicit operator int(ShaderProgram? data) => data?.Handle ?? default;
     
-    public int Handle { get; private set; }
+    public int Handle { get; protected set; }
 
-    public IReadOnlyDictionary<string, int> UniformLocations
+    public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformLocations
     {
         get
         {
             if (_uniformLocations is null)
             {
-                // The shader is now ready to go, but first, we're going to cache all the shader uniform locations.
-                // Querying this from the shader is very slow, so we do it once on initialization and reuse those values
-                // later.
+                GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var count);
 
-                // First, we have to get the number of active uniforms in the shader.
-                GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
-
-                // Next, allocate the dictionary to hold the locations.
                 _uniformLocations = [];
 
-                // Loop over all the uniforms,
-                for (var i = 0; i < numberOfUniforms; i++)
+                for (var i = 0; i < count; i++)
                 {
                     // get the name of this uniform,
-                    var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                    var key = GL.GetActiveUniform(Handle, i, out var size, out var type);
 
                     // get the location,
                     var location = GL.GetUniformLocation(Handle, key);
 
                     // and then add it to the dictionary.
-                    _uniformLocations.Add(key, location);
+                    _uniformLocations.Add(key, (location, size, type));
                 }
             }
 
             return _uniformLocations;
+        }
+    }
+
+    public IReadOnlyDictionary<string, (int location, int size, ActiveAttribType type)> AttributeLocations
+    {
+        get
+        {
+            if (_attributeLocations is null)
+            {
+                GL.GetProgram(Handle, GetProgramParameterName.ActiveAttributes, out var count);
+
+                _attributeLocations = [];
+
+                for (var i = 0; i < count; i++)
+                {
+                    // get the name of this uniform,
+                    var key = GL.GetActiveAttrib(Handle, i, out var size, out var type);
+
+                    // get the location,
+                    var location = GL.GetAttribLocation(Handle, key);
+
+                    // and then add it to the dictionary.
+                    _attributeLocations.Add(key, (location, size, type));
+                }
+            }
+
+            return _attributeLocations;
         }
     }
 
@@ -77,11 +95,8 @@ public class ShaderProgram : IDisposable
     {
         using var vertexShader = Shader.CreateFrom(ShaderType.VertexShader, vertSrc);
         using var fragmentShader = Shader.CreateFrom(ShaderType.FragmentShader, fragSrc);
-        return CreateFrom(vertexShader, fragmentShader);
+        return CreateFrom([vertexShader, fragmentShader]);
     }
-
-    public static ShaderProgram CreateFrom(params Shader[] shaders) 
-        => CreateFrom(shaders as IEnumerable<Shader>);
 
     public static ShaderProgram CreateFrom(IEnumerable<Shader> shaders)
     {
@@ -100,24 +115,18 @@ public class ShaderProgram : IDisposable
 
     private static void LinkProgram(int program)
     {
-        // We link the program
         GL.LinkProgram(program);
 
-        // Check for linking errors
         GL.GetProgram(program, GetProgramParameterName.LinkStatus, out var code);
         if (code != (int)All.True)
         {
-            // We can use `GL.GetProgramInfoLog(program)` to get information about the error.
-            throw new InvalidOperationException($"Error occurred whilst linking Program({program})");
+            var infoLog = GL.GetProgramInfoLog(program);
+            throw new InvalidOperationException($"Error occurred whilst linking Program({program}).\n\n{infoLog}");
         }
     }
 
     // A wrapper function that enables the shader program.
     public void Use() => GL.UseProgram(Handle);
-
-    // The shader sources provided with this project use hardcoded layout(location)-s. If you want to do it dynamically,
-    // you can omit the layout(location=X) lines in the vertex shader, and use this in VertexAttribPointer instead of the hardcoded values.
-    public int GetAttribLocation(string attribName) => GL.GetAttribLocation(Handle, attribName);
 
     // Uniform setters
     // Uniforms are variables that can be set by user code, instead of reading them from the VBO.
@@ -133,14 +142,14 @@ public class ShaderProgram : IDisposable
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
-    public void SetInt(string name, int data) => GL.ProgramUniform1(Handle, UniformLocations[name], data);
+    public void SetInt(string name, int data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
 
     /// <summary>
     /// Set a uniform float on this shader.
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
-    public void SetFloat(string name, float data) => GL.ProgramUniform1(Handle, UniformLocations[name], data);
+    public void SetFloat(string name, float data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
 
     /// <summary>
     /// Set a uniform Matrix4 on this shader
@@ -152,14 +161,14 @@ public class ShaderProgram : IDisposable
     ///   The matrix is transposed before being sent to the shader.
     ///   </para>
     /// </remarks>
-    public void SetMatrix4(string name, Matrix4 data) => GL.ProgramUniformMatrix4(Handle, UniformLocations[name], true, ref data);
+    public void SetMatrix4(string name, Matrix4 data) => GL.ProgramUniformMatrix4(Handle, UniformLocations[name].location, true, ref data);
 
     /// <summary>
     /// Set a uniform Vector3 on this shader.
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
-    public void SetVector3(string name, Vector3 data) => GL.ProgramUniform3(Handle, UniformLocations[name], data);
+    public void SetVector3(string name, Vector3 data) => GL.ProgramUniform3(Handle, UniformLocations[name].location, data);
 
     protected virtual void Dispose(bool disposing)
     {

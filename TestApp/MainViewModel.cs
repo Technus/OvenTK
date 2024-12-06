@@ -3,7 +3,6 @@ using OvenTK.Lib;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
-using static OvenTK.Lib.BufferBase;
 
 namespace OvenTK.TestApp;
 
@@ -22,8 +21,9 @@ public class MainViewModel : DependencyObject
         0,2,3,
     ];
     private const int _count = 10_000_000;
-    private readonly Vector4[] _positions = new Vector4[_count];
-    private readonly Vector4[] _values = new Vector4[_count];
+    private int _page = 0;
+    private readonly Vector4[] _positions = new Vector4[_count*3];
+    private readonly Vector4[] _values = new Vector4[_count*3];
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
@@ -52,7 +52,7 @@ public class MainViewModel : DependencyObject
 
     public MainViewModel()
     {
-        DataSetup();
+        //DataSetup();
         GLSetup();
         //DataWriteWorker();
     }
@@ -103,7 +103,7 @@ public class MainViewModel : DependencyObject
 
         _texture.Use(0);
 
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _positions.Length);
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
 
         _fpsCounter.PushFrame();
         FPS = _fpsCounter.FPS;
@@ -114,7 +114,7 @@ public class MainViewModel : DependencyObject
     private void DataSetup()
     {
         var rand = new Random();
-        for (int i = 0; i < _positions.Length; i++)
+        for (int i = 0; i < _count; i++)
         {
             _positions[i] = new Vector4((float)(rand.NextDouble() - 0.5) * 2, (float)(rand.NextDouble() - 0.5) * 2, 0f, 1f);
         }
@@ -145,8 +145,9 @@ public class MainViewModel : DependencyObject
         _texture = Texture.CreateFrom(
             Application.GetResourceStream(new Uri(@"\Resources\tower1.png", UriKind.Relative)).Stream);
 
-        _shader = ShaderProgram.CreateFromAsync(
-            Application.GetResourceStream(new Uri(@"\Resources\vertex.glsl", UriKind.Relative)).Stream,
-            Application.GetResourceStream(new Uri(@"\Resources\fragment.glsl", UriKind.Relative)).Stream).Result;
+        _shader = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\vertex.glsl", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\fragment.glsl", UriKind.Relative)).Stream),
+        ]);
     }
 }

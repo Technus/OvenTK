@@ -11,6 +11,10 @@ public class Texture : IDisposable
     private const int _mipDefault = 4;
     private bool _disposed;
 
+    public int Handle { get; private set; }
+    public int Width { get; private set; }
+    public int Height { get; private set; }
+
     protected Texture(int handle, int width, int height)
     {
         Handle = handle;
@@ -19,10 +23,6 @@ public class Texture : IDisposable
     }
 
     public static implicit operator int(Texture? data) => data?.Handle ?? default;
-
-    public int Handle { get; private set; }
-    public int Width { get; private set; }
-    public int Height { get; private set; }
 
     public static Texture CreateFrom(byte[] bytes, int mipLevels = _mipDefault)
     {

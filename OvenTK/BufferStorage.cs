@@ -8,19 +8,13 @@ public class BufferStorage : BufferBase, IDisposable
     private const BufferStorageFlags _default = BufferStorageFlags.None;
     private bool _disposed;
 
+    public BufferStorageFlags Flags { get; protected set; }
+
     protected BufferStorage(int handle, int byteSize, BufferStorageFlags flags = _default)
     {
         Handle = handle;
         Size = byteSize;
         Flags = flags;
-    }
-
-    public BufferStorageFlags Flags { get; protected set; }
-
-    public override void Resize(int size)
-    {
-        Size = size;
-        GL.NamedBufferStorage(Handle, size, default, Flags);
     }
 
     /// <summary>
