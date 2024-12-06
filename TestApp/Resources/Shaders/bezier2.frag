@@ -2,9 +2,9 @@
 
 const vec4 LineColor = vec4(0,0,1,1);
 
-//layout(location = 0) in vec4 color;//color from rect.vert
+layout(location = 0) in vec4 gColor;//color from bezier2.geom
 
 void main()
 {
-    gl_FragColor = LineColor;//output to screen
+    gl_FragColor = gColor;//output to screen
 }

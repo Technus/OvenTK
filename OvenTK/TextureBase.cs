@@ -50,9 +50,4 @@ public abstract class TextureBase
     /// <param name="format"></param>
     public void UseImage(int unit, TextureAccess access = TextureAccess.WriteOnly, SizedInternalFormat format = SizedInternalFormat.R32f) =>
         GL.BindImageTexture(unit, Handle, 0, false, 0, access, format);
-
-    public void GetImage()
-    {
-        //GL.GetTextureImage(Handle, 0, PixelFormat.R)
-    }
 }

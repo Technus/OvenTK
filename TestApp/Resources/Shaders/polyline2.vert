@@ -19,7 +19,7 @@ const vec2 viewPort = scale * 2 / size; //*2 due to [-1,1],[-1,1],[-1,1] viewpor
 
 void main()
 {
-    const float z = (gl_InstanceID+base)/float(count); //for depth testing
+    const float z = ((gl_VertexID/2)+base)/float(count); //for depth testing, there is no instance rendering done here so vertex id is generating it
 
 	gl_Position = vec4(sVertice, z, 1.0);
     gl_Position.xy -= pos.xy;//move viewport

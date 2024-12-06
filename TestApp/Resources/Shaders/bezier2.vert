@@ -21,7 +21,7 @@ void main()
 {
     const float z = ((gl_VertexID/4)+base)/float(count); //for depth testing, there is no instance rendering done here so vertex id is generating it
 
-	gl_Position = vec4(sVertice, z, 1.0);
+	gl_Position = vec4(sVertice, 0, 1.0);
     gl_Position.xy -= pos.xy;//move viewport
     gl_Position.xy *= viewPort.xy;//scale viewport
 }

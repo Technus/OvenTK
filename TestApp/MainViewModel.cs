@@ -4,7 +4,7 @@ using OvenTK.Lib;
 using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using System.Windows.Data;
+using System.Runtime.InteropServices;
 
 namespace OvenTK.TestApp;
 /// <summary>
@@ -76,11 +76,11 @@ public class MainViewModel : DependencyObject
 
     private static readonly Random _random = new();
 
-    private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices, _sLineIndices;
+    private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
     private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;
     private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite, _vBezier, _vBezier2, _vPolyline2;
     private Texture _tDigits;
-    private TextureBuffer _bComputeTexIn, _bComputeTexOut;
+    private TextureBuffer _bComputeTexIn, _bComputeTexOut, _bColorBezier;
     private BitmapFont _fConsolas;
     private SpriteSheet<Sprite> _sSprites;
     private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2, _pCompute;
@@ -90,7 +90,7 @@ public class MainViewModel : DependencyObject
         CameraScale = 1,
         InstanceCount = _count,
     };
-    private TripleBufferSimple<(PosRot[] xyar, ColorARGB[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers)> _tTriple;
+    private TripleBufferSimple<(PosRot[] xyar, ColorARGB[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers, ColorARGB[] bezierColors)> _tTriple;
 
     /// <summary>
     /// Box/Container position and rotation
@@ -162,13 +162,32 @@ public class MainViewModel : DependencyObject
         public Vector2 Point4 { get; set; }
     }
 
+    /// <summary>
+    /// swizzling to opengl would be then *.bgra
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit)]
     private struct ColorARGB
     {
-        public int Color { get; set; }
+        [FieldOffset(3)]
+        private byte a;
+        [FieldOffset(2)]
+        private byte r;
+        [FieldOffset(1)]
+        private byte g;
+        [FieldOffset(0)]
+        private byte b;
+        [FieldOffset(0)]
+        private int color;
+
+        public int Color { readonly get => color; set => color = value; }
 
         public static implicit operator int(ColorARGB color) => color.Color;
 
         public static implicit operator ColorARGB(int color) => new() { Color = color };
+
+        public static implicit operator Color(ColorARGB color) => System.Drawing.Color.FromArgb(color);
+
+        public static implicit operator ColorARGB(Color color) => color.ToArgb();
     }
 
     public double FPS
@@ -318,6 +337,7 @@ public class MainViewModel : DependencyObject
                         var end = start + batchBezier;
                         for (int j = start; j < end; j++)
                         {
+                            b.bezierColors[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255));
                             b.beziers[j] = new()
                             {
                                 Point2 = new()
@@ -369,11 +389,6 @@ public class MainViewModel : DependencyObject
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        //Compute buffers
-
-        _dComputeDataIn = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
-        _dComputeDataOut = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
-
         var textureCount = 0;
 
         //Add hacky digits texure
@@ -391,10 +406,20 @@ public class MainViewModel : DependencyObject
             sprite => Application.GetResourceStream(new Uri(@$"\Resources\Sprites\{sprite.GetDescription()}", UriKind.Relative)).Stream);
         textureCount = _sSprites.UseBase(textureCount);
 
+        //Compute buffers
+        _dComputeDataIn = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
         _bComputeTexIn = TextureBuffer.CreateFrom(_dComputeDataIn, SizedInternalFormat.Rgba32f);
         _bComputeTexIn.UseImage(textureCount++, TextureAccess.ReadOnly, SizedInternalFormat.Rgba32f);
+
+        _dComputeDataOut = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
         _bComputeTexOut = TextureBuffer.CreateFrom(_dComputeDataOut, SizedInternalFormat.Rgba32f);
         _bComputeTexOut.UseImage(textureCount++, TextureAccess.WriteOnly, SizedInternalFormat.Rgba32f);
+
+        //line/bezier
+        _dXYBezier = BufferData.Create(_beziers * Unsafe.SizeOf<CubicBezierPatch>(), BufferUsageHint.StreamDraw);
+        _dColorBezier = BufferData.Create(_beziers * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
+        _bColorBezier = TextureBuffer.CreateFrom(_dColorBezier, SizedInternalFormat.Rgba8ui);
+        _bColorBezier.Use(textureCount++);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
 
@@ -409,17 +434,10 @@ public class MainViewModel : DependencyObject
         //size of the hacky digit to render
         _sDigitVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(18, 32));
 
-        //Common indices for bezier segment
-        _sLineIndices = BufferStorage.CreateFrom(Extensions.MakeLineStripIndices(4));
-
         //box/container data buffers
         _dXYAngle = BufferData.Create(_count * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
         _dColor = BufferData.Create(_count * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
         _dIdProg = BufferData.Create(_count * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
-
-        //line/bezier
-        _dXYBezier = BufferData.Create(_beziers * Unsafe.SizeOf<CubicBezierPatch>(), BufferUsageHint.StreamDraw);
-        _dColorBezier = BufferData.Create(_beziers * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
 
         //Create 'fixed' size buffer for text
         _dXYAngleBFChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
@@ -433,7 +451,8 @@ public class MainViewModel : DependencyObject
                 new IdProg[_count],
                 BitmapFont.MakeArray(_dXYAngleBFChar),
                 SpriteSheet.MakeArray(_dXYAngleSSSprite),
-                new CubicBezierPatch[_beziers]))
+                new CubicBezierPatch[_beziers],
+                new ColorARGB[_beziers]))
             ;//will be streamed to _d*
 
         //render Input definitions
@@ -460,17 +479,14 @@ public class MainViewModel : DependencyObject
             VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
             VertexArrayAttrib.Create(_dXYAngleSSSprite,     4, VertexAttribType.Float,        divisor: 1),
         ]);
-        _vBezier = VertexArray.Create(_sLineIndices, [
+        _vBezier = VertexArray.Create([
             VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
-            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
-        _vBezier2 = VertexArray.Create(_sLineIndices, [
+        _vBezier2 = VertexArray.Create([
             VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
-            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
-        _vPolyline2 = VertexArray.Create(_sLineIndices, [
+        _vPolyline2 = VertexArray.Create([
             VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
-            VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
 
         //shader program definitions
@@ -559,6 +575,7 @@ public class MainViewModel : DependencyObject
             _dXYAngleBFChar.Recreate(b.text);
             _dXYAngleSSSprite.Recreate(b.sprites);
             _dXYBezier.Recreate(b.beziers);
+            _dColorBezier.Recreate(b.bezierColors);
 
             _invalidated = true;//and invalidate
         }
@@ -578,14 +595,15 @@ public class MainViewModel : DependencyObject
         _uniform.InstanceCount = _beziers;
         _dUniform.Recreate(ref _uniform);
 
-        GL.DrawArrays(PrimitiveType.LinesAdjacency, 0, _beziers * _sLineIndices.DrawCount);//since we do not draw same verices over and over it is not instanced rendering
+        GL.DrawArrays(PrimitiveType.LinesAdjacency, 0, _beziers * 4);//*4 cause 4 points, since we do not draw same verices over and over it is not instanced rendering
 
         GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
 
         _pPolyline2.Use();
         _vPolyline2.Use();
-        GL.DrawArrays(PrimitiveType.Lines, 0, _beziers * _sLineIndices.DrawCount);
+        GL.DrawArrays(PrimitiveType.Lines, 0, _beziers * 2 * 2);//*2 cause 2 points , *2 cause the source buffer is lineadjencies so 2x longer
 
+        return;
 
         GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.DepthBufferBit);//new layer

@@ -1,5 +1,9 @@
 ﻿#version 460 compatibility
 
+layout (binding = 7) uniform isamplerBuffer dColor; //color
+
+layout (location = 0) out vec4 gColor; //to next shader
+
 layout (binding = 0) uniform Uniform {
     vec2 size;
     vec2 texSize;
@@ -147,6 +151,9 @@ void drawSegment(vec2 points[4]/*, vec4 colors[4], float zValues[4]*/)
 
 void main(void)
 {
+    ivec4 colorTexel = texelFetch(dColor, gl_PrimitiveIDIn/2);
+    gColor.rgba = vec4(colorTexel.bgra)/255.0;
+
     // 4 points
     vec4 Points[4];
     Points[0] = gl_in[0].gl_Position;
