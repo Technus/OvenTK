@@ -1,8 +1,19 @@
 ﻿namespace OvenTK.Lib;
 
-public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDisposable
+public class BufferData : IDisposable
 {
+    private const BufferUsageHint _default = BufferUsageHint.StaticDraw;
+    private readonly BufferUsageHint hint;
     private bool _disposed;
+    private int handle;
+    private int byteSize;
+
+    protected BufferData(int handle, int byteSize, BufferUsageHint hint = _default)
+    {
+        this.handle = handle;
+        this.byteSize = byteSize;
+        this.hint = hint;
+    }
 
     public int Handle => handle;
     public int Size => byteSize;
@@ -147,7 +158,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static unsafe BufferData[] Create(IReadOnlyList<int> sizes, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+    public static unsafe BufferData[] Create(IReadOnlyList<int> sizes, BufferUsageHint hint = _default)
     {
         var ids = stackalloc int[sizes.Count];
         var buffers = new BufferData[sizes.Count];
@@ -166,7 +177,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static IEnumerable<BufferData> Create(IEnumerable<int> sizes, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+    public static IEnumerable<BufferData> Create(IEnumerable<int> sizes, BufferUsageHint hint = _default)
     {
         foreach (var size in sizes)
             yield return Create(size, hint);
@@ -178,14 +189,14 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static BufferData Create(int size, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+    public static BufferData Create(int size, BufferUsageHint hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         GL.NamedBufferData(handle, size, default, hint);
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferData CreateFrom<V>(ref readonly Memory<V> memory, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+    public static unsafe BufferData CreateFrom<V>(ref readonly Memory<V> memory, BufferUsageHint hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -194,7 +205,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferData CreateFrom<V>(ref readonly ReadOnlyMemory<V> memory, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+    public static unsafe BufferData CreateFrom<V>(ref readonly ReadOnlyMemory<V> memory, BufferUsageHint hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -203,7 +214,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferData CreateFrom<V>(ref readonly Span<V> memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static unsafe BufferData CreateFrom<V>(ref readonly Span<V> memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -212,7 +223,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferData CreateFrom<V>(ref readonly ReadOnlySpan<V> memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static unsafe BufferData CreateFrom<V>(ref readonly ReadOnlySpan<V> memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -221,7 +232,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferData CreateFrom<V>(ref readonly V memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static unsafe BufferData CreateFrom<V>(ref readonly V memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -230,7 +241,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static BufferData CreateFrom<V>(V[] memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static BufferData CreateFrom<V>(V[] memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -238,7 +249,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static BufferData CreateFrom<V>(V[,] memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static BufferData CreateFrom<V>(V[,] memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -246,7 +257,7 @@ public class BufferData(int handle, int byteSize, BufferUsageHint hint) : IDispo
         return new(handle, size, hint);
     }
 
-    public static BufferData CreateFrom<V>(V[,,] memory, BufferUsageHint hint = BufferUsageHint.StaticDraw) where V : struct
+    public static BufferData CreateFrom<V>(V[,,] memory, BufferUsageHint hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();

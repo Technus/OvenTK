@@ -1,10 +1,16 @@
 ﻿namespace OvenTK.Lib;
 
 // A simple class meant to help create shaders.
-public class Shader(int handle) : IDisposable
+public class Shader : IDisposable
 {
     private bool _disposed;
     private Dictionary<string, int>? _uniformLocations;
+    private int handle;
+
+    protected Shader(int handle)
+    {
+        this.handle = handle;
+    }
 
     public int Handle => handle;
 

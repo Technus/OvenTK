@@ -1,8 +1,19 @@
 ﻿namespace OvenTK.Lib;
 
-public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) : IDisposable
+public class BufferStorage : IDisposable
 {
+    private const BufferStorageFlags _default = BufferStorageFlags.None;
+    private readonly BufferStorageFlags flags;
     private bool _disposed;
+    private int handle;
+    private int byteSize;
+
+    protected BufferStorage(int handle, int byteSize, BufferStorageFlags flags = _default)
+    {
+        this.handle = handle;
+        this.byteSize = byteSize;
+        this.flags = flags;
+    }
 
     public int Handle => handle;
     public int Size => byteSize;
@@ -14,7 +25,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static unsafe BufferStorage[] Create(IReadOnlyList<int> sizes, BufferStorageFlags hint = BufferStorageFlags.None)
+    public static unsafe BufferStorage[] Create(IReadOnlyList<int> sizes, BufferStorageFlags hint = _default)
     {
         var ids = stackalloc int[sizes.Count];
         var buffers = new BufferStorage[sizes.Count];
@@ -33,7 +44,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static IEnumerable<BufferStorage> Create(IEnumerable<int> sizes, BufferStorageFlags hint = BufferStorageFlags.None)
+    public static IEnumerable<BufferStorage> Create(IEnumerable<int> sizes, BufferStorageFlags hint = _default)
     {
         foreach (var size in sizes)
             yield return Create(size, hint);
@@ -45,14 +56,14 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
     /// <param name="size"></param>
     /// <param name="hint"></param>
     /// <returns></returns>
-    public static BufferStorage Create(int size, BufferStorageFlags hint = BufferStorageFlags.None)
+    public static BufferStorage Create(int size, BufferStorageFlags hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         GL.NamedBufferStorage(handle, size, default, hint);
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferStorage CreateFrom<V>(ref readonly Memory<V> memory, BufferStorageFlags hint = BufferStorageFlags.None)
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly Memory<V> memory, BufferStorageFlags hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -61,7 +72,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferStorage CreateFrom<V>(ref readonly ReadOnlyMemory<V> memory, BufferStorageFlags hint = BufferStorageFlags.None)
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly ReadOnlyMemory<V> memory, BufferStorageFlags hint = _default)
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -70,7 +81,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferStorage CreateFrom<V>(ref readonly Span<V> memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly Span<V> memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -79,7 +90,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferStorage CreateFrom<V>(ref readonly ReadOnlySpan<V> memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly ReadOnlySpan<V> memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -88,7 +99,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static unsafe BufferStorage CreateFrom<V>(ref readonly V memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly V memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -97,7 +108,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static BufferStorage CreateFrom<V>(V[] memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static BufferStorage CreateFrom<V>(V[] memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -105,7 +116,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static BufferStorage CreateFrom<V>(V[,] memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static BufferStorage CreateFrom<V>(V[,] memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
@@ -113,7 +124,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
         return new(handle, size, hint);
     }
 
-    public static BufferStorage CreateFrom<V>(V[,,] memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static BufferStorage CreateFrom<V>(V[,,] memory, BufferStorageFlags hint = _default) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
