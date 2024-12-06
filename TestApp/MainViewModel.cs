@@ -75,8 +75,8 @@ public class MainViewModel : DependencyObject
     private const int _spritesPerInstance = 4;
 
     [ThreadStatic]
-    public static Random _random;
-    public static Random Random => _random ??= new();
+    private static Random? _random;
+    private static Random Random => _random ??= new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
     private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;
@@ -584,6 +584,7 @@ public class MainViewModel : DependencyObject
 
         if (!_invalidated)//but actually render when invalidated otherwise keep same frame
             return;
+        _invalidated = false;
 
         GL.Disable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//clear screen
@@ -667,7 +668,7 @@ public class MainViewModel : DependencyObject
         _uniform.InstanceBase = _base - _spritesPerInstance + 1;
         _uniform.InstanceCount = _count * _spritesPerInstance;
         _dUniform.Recreate(ref _uniform);
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, BitmapFont.InstanceCount(_dXYAngleSSSprite));
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, SpriteSheet.InstanceCount(_dXYAngleSSSprite));
 
         var td = Extensions.GetElapsedTime(sw, Stopwatch.GetTimestamp());
         Debug.WriteLine($"Draw Time {td}");
