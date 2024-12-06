@@ -8,17 +8,17 @@
 		<When Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
 			<ItemGroup>
 				<PackageReference Include="OpenTK.Graphics" Version="4.8.2" />
-				<Using Include="OpenTK"/>
-				<Using Include="OpenTK.Graphics"/>
-				<Using Include="OpenTK.Mathematics"/>
+				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Graphics" />
+				<Using Include="OpenTK.Mathematics" />
 			</ItemGroup>
 		</When>
 		<When Condition=" '$(TargetFramework)' == 'net6' or '$(TargetFramework)' == 'net8' ">
 			<ItemGroup>
 				<PackageReference Include="OpenTK" Version="4.8.2" />
-				<Using Include="OpenTK"/>
-				<Using Include="OpenTK.Graphics"/>
-				<Using Include="OpenTK.Mathematics"/>
+				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Graphics" />
+				<Using Include="OpenTK.Mathematics" />
 			</ItemGroup>
 		</When>
 		<Otherwise>
@@ -26,14 +26,16 @@
 				<PackageReference Include="OpenTK" Version="3.3.3" />
 				<PackageReference Include="System.Memory" Version="4.5.5" />
 				<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-				<Using Include="OpenTK"/>
+				<Using Include="OpenTK" />
 			</ItemGroup>
 		</Otherwise>
 	</Choose>
 
 	<ItemGroup>
-		<Using Include="OpenTK.Graphics.OpenGL4"/>
-		<Using Include="System.Buffers"/>
-		<Using Include="System.Runtime.CompilerServices"/>
+		<PackageReference Include="StbImageSharp" Version="2.30.15" />
+
+		<Using Include="OpenTK.Graphics.OpenGL4" />
+		<Using Include="System.Buffers" />
+		<Using Include="System.Runtime.CompilerServices" />
 	</ItemGroup>
 </Project>
