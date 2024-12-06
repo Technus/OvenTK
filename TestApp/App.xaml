@@ -5,7 +5,7 @@
     xmlns:local="clr-namespace:OvenTK.TestApp">
     <Application.Resources>
         <DataTemplate DataType="{x:Type local:MainViewModel}">
-            <local:MainView/>
+            <local:MainView />
         </DataTemplate>
     </Application.Resources>
 </Application>
