@@ -1,10 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<Title>OvenTK</Title>
+		<Description>
+			OvenTK Helpers for OpenTK OpenGL interop.
+		</Description>
+
+		<PackageId>OvenTK</PackageId>
+		<IsPackable>true</IsPackable>
+
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<EmbedAllSources>true</EmbedAllSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<DebugType>Embedded</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<IncludeContentInPack>true</IncludeContentInPack>
+
 		<TargetFrameworks>netstandard2.1;net461;net481;net6;net8;</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<!-- S2368 - multidimensional/jagged arrays in public API -->
 		<NoWarn>$(NoWarn);S2368;CS8500;</NoWarn>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<Choose>
