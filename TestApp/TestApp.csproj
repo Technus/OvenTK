@@ -31,6 +31,14 @@
 	<ItemGroup>
 	  <Resource Include="Resources\**\*" />
 	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Remove="Resources\digits.png" />
+	  <None Remove="Resources\fragmentD.glsl" />
+	  <None Remove="Resources\fragmentOld.glsl" />
+	  <None Remove="Resources\vertexD.glsl" />
+	  <None Remove="Resources\vertexOld.glsl" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\OvenTK\Lib.csproj" />

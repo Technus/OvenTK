@@ -1,68 +1,72 @@
 using OpenTK.Graphics.OpenGL4;
-using OvenTK.Lib;
-using System;
-using System.Diagnostics;
 using System.Drawing;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using OvenTK.Lib;
 using System.Windows;
+using System.Runtime.CompilerServices;
+using System.Diagnostics;
+using System.Windows.Media.Media3D;
+using System.Runtime.InteropServices;
 
 namespace OvenTK.TestApp;
 
 public class MainViewModel : DependencyObject
 {
-    private readonly float[] _vertices =
-    [
-        0.5f,0.5f,
-        0.5f,-0.5f,
-        -0.5f,-0.5f,
-        -0.5f,0.5f,
-    ];
-    private readonly byte[] _indices =
-    [
-        0,1,2,
-        0,2,3,
-    ];
-    private const int _count = 100_000;
-    private const int _cpus = 4;
-    private readonly TripleBufferSimple<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    struct EggNog(float egg, float nog, float eggNog)
-    {
-        public Matrix4 projection = Matrix4.Identity;
-        public Matrix4 view = Matrix4.Identity;
-        public Vector3 color = new(egg, nog, eggNog);
-        public float count = _count;
-    }
-    private EggNog _uniform = new(0.1f, 0.3f, 0.8f);
-
-    private BufferBase[] _buffers;
-    private VertexArray _vao;
-    private Texture _texture;
-    private ShaderProgram _shader;
     private readonly FrequencyCounter _fpsCounter = new();
     private readonly FrequencyCounter _tpsCounter = new();
+
+    private const int _cpus = 4;
+    private const int _countDefault = 8;/// must distribute equally across <see cref="_cpus"/>
+
+    private const int _boxWidth = 80;
+    private const int _boxHeight = 50;
+
+    private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sRectIndices;
+    private BufferData _sUniform, _dXYAngleRatio, _dColor, _dIdProgram;
+    private VertexArray _vBox, _vContainer, _vDigits;
+    private Texture _tDigits;
+    private ShaderProgram _pRect, _pDigits;
+    private bool _invalidated = true;
+    private Uniform _uniform = new()
+    {
+        CameraScale = new(1f, 1f),
+        InstanceCount = _countDefault,
+    };
+    private TripleBufferSimple<(Vector4[] xyar, int[] color, IdProg[] cip_)> _dTtriple;
+
+
+    private struct IdProg
+    {
+        public uint Id { get; set; }
+        public uint Program { get; set; }
+    }
+
+    private struct Uniform
+    {
+        public Vector2 Resolution { get; set; }
+        public Vector2 CameraScale { get; set; }
+        public Vector2 CameraPosition { get; set; }
+        public Vector2 DigitPosition { get; set; }
+        public int InstanceBase { get; set; }
+        public int InstanceCount { get; set; }
+        public int DigitDiv { get; set; }
+    }
 
     public double FPS
     {
         get => (double)GetValue(FPSProperty);
         set => SetValue(FPSProperty, value);
     }
-
-    // Using a DependencyProperty as the backing store for FPS.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty FPSProperty =
         DependencyProperty.Register("FPS", typeof(double), typeof(MainViewModel), new PropertyMetadata(0d));
 
     public double TPS
     {
-        get { return (double)GetValue(TPSProperty); }
-        set { SetValue(TPSProperty, value); }
+        get => (double)GetValue(TPSProperty);
+        set => SetValue(TPSProperty, value);
     }
-
-    // Using a DependencyProperty as the backing store for TPS.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty TPSProperty =
         DependencyProperty.Register("TPS", typeof(double), typeof(MainViewModel), new PropertyMetadata(0d));
+
 
     public MainViewModel()
     {
@@ -72,7 +76,7 @@ public class MainViewModel : DependencyObject
 
     public async Task DataWriteMapped(int cpus = _cpus, CancellationToken token = default)
     {
-        if (_count % cpus is not 0)
+        if (_uniform.InstanceCount % cpus is not 0)
             throw new InvalidOperationException();
 
         while (!token.IsCancellationRequested)
@@ -84,114 +88,152 @@ public class MainViewModel : DependencyObject
                 _tpsCounter.PushEvent();
                 await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.Frequency);
 
-                using var w = _triple.Write();
+                using var w = _dTtriple.Write();
                 var b = w.Buffer;
-                var (b0, b1) = (b[0], b[1]);
 
-                var batch = _count / cpus;
+                var batch = _uniform.InstanceCount / cpus;
                 var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
                 {
                     var random = new Random();
-                    var start = i * batch;
+                    var start = (uint)(i * batch);
                     var end = start + batch;
-                    for (int j = start; j < end; j++)
+                    for (uint j = start; j < end; j++)
                     {
-                        b0[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
-                        b1[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
+                        b.xyar[j] = new Vector4((float)(random.NextDouble() - 0.5) * 200, (float)(random.NextDouble() - 0.5) * 200, 0f, 0.5f);
+                        b.color[j] = Color.FromArgb(255, 0, (int)(random.NextDouble() / 2 * 255), (int)(random.NextDouble() * 255)).ToArgb();
+                        b.cip_[j] = new IdProg { Id = j, Program = j*10};
                     }
                 }));
 
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
-            await Task.Delay(10);
 
             var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
+
+            await Task.Delay(1000).ConfigureAwait(false);
         }
-    }
-
-    [DllImport("msvcrt.dll", SetLastError = false)]
-    static extern nint memcpy(nint dest, nint src, int count);
-
-    public unsafe void OnRender(TimeSpan t)
-    {
-        var sw = Stopwatch.GetTimestamp();
-
-        _fpsCounter.PushEvent();
-        FPS = _fpsCounter.Frequency;
-        //DataWriteMapped();
-
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        //using var sync = Sync.Create();
-
-        if (!_triple.IsStale)
-        {
-            using var r = _triple.Read();
-            var b = r.Value;
-            (_buffers[2] as BufferData)!.Recreate(b[0]);
-            (_buffers[4] as BufferData)!.Recreate(b[1]);
-        }
-
-        /*
-        using (var map = _buffers[2].MapPage<Vector4>(r.Id, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
-        {
-            //var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
-            //span.CopyTo(map.Span());
-
-            fixed(void* src = b0)
-            fixed(void* dest = map.Span)
-                memcpy((nint)dest, (nint)src, _count);
-        }
-
-        using (var map = _buffers[4].MapPage<Vector4>(r.Id, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
-        {
-            //var span = _values.AsSpan().Slice(r * _count, _count); //map.Span();
-            //span.CopyTo(map.Span());
-
-            fixed (void* src = b1)
-            fixed (void* dest = map.Span)
-                memcpy((nint)dest, (nint)src, _count);
-        }
-        */
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _buffers[1].DrawCount, _buffers[1].DrawType, default, _count);
-        //sync.WaitClient();
-
-        var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
-        Debug.WriteLine($"Draw Time {td}");
     }
 
     private void GLSetup()
     {
         GL.ClearColor(Color.LightGray);
-        GL.Disable(EnableCap.DepthTest);
-        GL.DepthFunc(DepthFunction.Less);
+        GL.Enable(EnableCap.DepthTest);
+        GL.DepthFunc(DepthFunction.Lequal);
 
-        _buffers = [
-            BufferStorage.CreateFrom(_vertices),
-            BufferStorage.CreateFrom(_indices),
-            BufferData.Create(_count * Unsafe.SizeOf<Vector4>(), BufferUsageHint.StreamDraw),
-            BufferStorage.CreateFrom(ref _uniform),
-            BufferData.Create(_count * Unsafe.SizeOf<Vector4>(), BufferUsageHint.StreamDraw),
-        ];
+        _sRectIndices = BufferStorage.CreateFrom(Extensions.MakeRectIndices());
+        _sBoxVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(_boxWidth, _boxHeight));
+        _sContainerVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(_boxWidth, 80));
+        _sDigitVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(18,32));
 
-        _vao = VertexArray.Create(_buffers[1], [
-            VertexArrayAttrib.Create(_buffers[0], 2, VertexAttribType.Float, sizeof(float)*2, false),
-            VertexArrayAttrib.Create(_buffers[2], 4, VertexAttribType.Float, sizeof(float)*4, false, 1),
-            VertexArrayAttrib.Create(_buffers[4], 4, VertexAttribType.Float, sizeof(float)*4, false, 1),
+
+        _dTtriple = new(() => (new Vector4[_uniform.InstanceCount], new int[_uniform.InstanceCount], new IdProg[_uniform.InstanceCount]));//will be streamed to _d*
+        _dXYAngleRatio = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<Vector4>(), BufferUsageHint.StreamDraw);
+        _dColor = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<int>(), BufferUsageHint.StreamDraw);
+        _dIdProgram = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
+        _sUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);
+        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _sUniform);
+
+        _vBox = VertexArray.Create(_sRectIndices, [
+            VertexArrayAttrib.Create(_sBoxVertices,         2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dXYAngleRatio,        4, VertexAttribType.Float,        divisor: 1),
+            VertexArrayAttrib.Create(_dColor,               4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
-        _vao.Use();
-
-        _texture = Texture.CreateFrom(
-            Application.GetResourceStream(new Uri(@"\Resources\tower1.png", UriKind.Relative)).Stream);
-        _texture.Use(0);
-
-        _shader = ShaderProgram.CreateFrom([
-            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\vertex.glsl", UriKind.Relative)).Stream),
-            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\fragment.glsl", UriKind.Relative)).Stream),
+        _vContainer = VertexArray.Create(_sRectIndices, [
+            VertexArrayAttrib.Create(_sContainerVertices,   2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dXYAngleRatio,        4, VertexAttribType.Float,        divisor: 1),
+            VertexArrayAttrib.Create(_dColor,               4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
-        _shader.Use();
+        _vDigits = VertexArray.Create(_sRectIndices, [
+            VertexArrayAttrib.Create(_sDigitVertices,       2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dXYAngleRatio,        4, VertexAttribType.Float,        divisor: 1),
+            VertexArrayAttrib.Create(_dIdProgram,           2, VertexAttribType.UnsignedInt,  divisor: 1),
+        ]);
 
-        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _buffers[3]);
+        _tDigits = Texture.CreateFrom(Application.GetResourceStream(new Uri(@"\Resources\digits.png", UriKind.Relative)).Stream);
+        _tDigits.Use(0);
+
+        _pRect = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\vertexR.glsl", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\fragmentR.glsl", UriKind.Relative)).Stream),
+        ]);
+
+        _pDigits = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\vertexD.glsl", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\fragmentD.glsl", UriKind.Relative)).Stream),
+        ]);
+    }
+
+    public void OnRender(TimeSpan t)
+    {
+        _fpsCounter.PushEvent();
+        FPS = _fpsCounter.Frequency;
+
+        if (!_dTtriple.IsStale)
+        {
+            using var r = _dTtriple.Read();
+            var b = r.Value;
+            _dXYAngleRatio.Recreate(b.xyar);
+            _dColor.Recreate(b.color);
+            _dIdProgram.Recreate(b.cip_);
+            _invalidated = true;
+        }
+
+        if (!_invalidated)
+            return;
+
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        _vBox.Use();
+        _pRect.Use();
+
+        _uniform.InstanceBase = 0;
+        _sUniform.Recreate(ref _uniform);
+
+        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, 
+            default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+
+        _vDigits.Use();
+        _pDigits.Use();
+
+        const int idDigits = 4;
+        for (int i = 0; i < idDigits; i++)//foreach container id digit
+        {
+            _uniform.DigitDiv = (int)Math.Pow(10,idDigits-i-1);
+            _uniform.DigitPosition = new(i*18- _boxWidth/2+4, +_tDigits.Height/2);
+            _sUniform.Recreate(ref _uniform);
+            GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+                default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+        }
+
+        return;
+
+        const int progDigits = 6;
+        for (int i = 0; i < progDigits; i++)//foreach container id digit
+        {
+
+            _sUniform.Recreate(ref _uniform);
+            GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+                default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+        }
+
+        _vBox.Use();
+        _vContainer.Use();
+
+        _uniform.InstanceBase = _uniform.InstanceCount / 2;
+        _sUniform.Recreate(ref _uniform);
+
+        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, 
+            default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+    }
+
+    internal void OnResize(object sender, SizeChangedEventArgs e)
+    {
+        _uniform.Resolution = new()
+        {
+            X = (float)e.NewSize.Width,
+            Y = (float)e.NewSize.Height,
+        };
+        _invalidated = true;
     }
 }
