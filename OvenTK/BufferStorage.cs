@@ -37,7 +37,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// </summary>
     /// <param name="label"></param>
     /// <returns></returns>
-    public new BufferStorage WithLabel(string label)
+    public BufferStorage WithLabel(string label)
     {
         if (!Extensions._isDebug)
             return this;

@@ -20,6 +20,7 @@ public abstract class BufferBase
     /// Size in bytes
     /// </summary>
     public int Size { get; protected set; }
+
     /// <summary>
     /// If this buffer contains valid data for drawing indices this will return the indice type
     /// </summary>
@@ -45,20 +46,6 @@ public abstract class BufferBase
     /// </summary>
     /// <param name="data"></param>
     public static implicit operator int(BufferBase? data) => data?.Handle ?? 0;
-
-    /// <summary>
-    /// Adds a label to this object
-    /// </summary>
-    /// <param name="label"></param>
-    /// <returns></returns>
-    public BufferBase WithLabel(string label)
-    {
-        if (!Extensions._isDebug)
-            return this;
-        label.EnsureASCII();
-        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);
-        return this;
-    }
 
     /// <summary>
     /// Invalidates buffer in OpenGL

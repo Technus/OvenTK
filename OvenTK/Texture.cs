@@ -41,7 +41,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// </summary>
     /// <param name="label"></param>
     /// <returns></returns>
-    public new Texture WithLabel(string label)
+    public Texture WithLabel(string label)
     {
         if (!Extensions._isDebug)
             return this;

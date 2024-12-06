@@ -25,7 +25,7 @@ public class TextureBuffer : TextureBase, IDisposable
     /// </summary>
     /// <param name="label"></param>
     /// <returns></returns>
-    public new TextureBuffer WithLabel(string label)
+    public TextureBuffer WithLabel(string label)
     {
         if (!Extensions._isDebug)
             return this;

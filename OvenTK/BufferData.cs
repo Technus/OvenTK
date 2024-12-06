@@ -37,7 +37,7 @@ public class BufferData : BufferBase, IDisposable
     /// </summary>
     /// <param name="label"></param>
     /// <returns></returns>
-    public new BufferData WithLabel(string label)
+    public BufferData WithLabel(string label)
     {
         if (!Extensions._isDebug)
             return this;
