@@ -74,7 +74,9 @@ public class MainViewModel : DependencyObject
     /// </summary>
     private const int _spritesPerInstance = 4;
 
-    private static readonly Random _random = new();
+    [ThreadStatic]
+    public static Random _random;
+    public static Random Random => _random ??= new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
     private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;
@@ -301,11 +303,11 @@ public class MainViewModel : DependencyObject
                         {
                             b.xyar[j] = new PosRot
                             {
-                                X = (float)(_random.NextDouble() - 0.5) * 8000,
-                                Y = (float)(_random.NextDouble() - 0.5) * 8000,
-                                Angle = (float)((_random.NextDouble() - 0.5) * (Math.PI)),
+                                X = (float)(Random.NextDouble() - 0.5) * 8000,
+                                Y = (float)(Random.NextDouble() - 0.5) * 8000,
+                                Angle = (float)((Random.NextDouble() - 0.5) * (Math.PI)),
                             };
-                            b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
+                            b.color[j] = Color.FromArgb(255, 0, (int)(Random.NextDouble() / 2 * 255), (int)(Random.NextDouble() * 255)).ToArgb();
                             b.cip_[j] = new IdProg
                             {
                                 Id = j,
@@ -319,14 +321,14 @@ public class MainViewModel : DependencyObject
                             var (dx, dy) = (-59, -24);//pre rotation
                             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
                                                                                         //then text is written to buffer array
-                            _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X + rdx), (float)(b.xyar[j].Y + rdy), rotation, _random.Next(10000000).ToString().AsSpan());
+                            _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X + rdx), (float)(b.xyar[j].Y + rdy), rotation, Random.Next(10000000).ToString().AsSpan());
 
                             b.sprites[j * _spritesPerInstance] = new()
                             {
                                 X = b.xyar[j].X,
                                 Y = b.xyar[j].Y,
                                 Angle = b.xyar[j].Angle,
-                                Id = (float)_random.GetRandom<Sprite>(.5f),
+                                Id = (float)Random.GetRandom<Sprite>(.5f),
                             };
                         }
                     }
@@ -337,29 +339,29 @@ public class MainViewModel : DependencyObject
                         var end = start + batchBezier;
                         for (int j = start; j < end; j++)
                         {
-                            b.bezierColors[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255));
+                            b.bezierColors[j] = Color.FromArgb(255, 0, (int)(Random.NextDouble() / 2 * 255), (int)(Random.NextDouble() * 255));
                             b.beziers[j] = new()
                             {
                                 Point2 = new()
                                 {
-                                    X = (float)(_random.NextDouble() - 0.5) * 8000,
-                                    Y = (float)(_random.NextDouble() - 0.5) * 8000,
+                                    X = (float)(Random.NextDouble() - 0.5) * 8000,
+                                    Y = (float)(Random.NextDouble() - 0.5) * 8000,
                                 },
                                 Point3 = new()
                                 {
-                                    X = (float)(_random.NextDouble() - 0.5) * 8000,
-                                    Y = (float)(_random.NextDouble() - 0.5) * 8000,
+                                    X = (float)(Random.NextDouble() - 0.5) * 8000,
+                                    Y = (float)(Random.NextDouble() - 0.5) * 8000,
                                 },
                             };
                             b.beziers[j].Point1 = new()
                             {
-                                X = b.beziers[j].Point2.X + (float)(_random.NextDouble() - 0.5) * 2000,
-                                Y = b.beziers[j].Point2.Y + (float)(_random.NextDouble() - 0.5) * 2000,
+                                X = b.beziers[j].Point2.X + (float)(Random.NextDouble() - 0.5) * 2000,
+                                Y = b.beziers[j].Point2.Y + (float)(Random.NextDouble() - 0.5) * 2000,
                             };
                             b.beziers[j].Point4 = new()
                             {
-                                X = b.beziers[j].Point3.X + (float)(_random.NextDouble() - 0.5) * 2000,
-                                Y = b.beziers[j].Point3.Y + (float)(_random.NextDouble() - 0.5) * 2000,
+                                X = b.beziers[j].Point3.X + (float)(Random.NextDouble() - 0.5) * 2000,
+                                Y = b.beziers[j].Point3.Y + (float)(Random.NextDouble() - 0.5) * 2000,
                             };
                         }
                     }
@@ -541,10 +543,10 @@ public class MainViewModel : DependencyObject
         _pCompute.Use();
         using (var write = _dComputeDataIn.Map<float>(BufferAccess.WriteOnly))
         {
-            write.Span[4] = _random.Next(2138);
-            write.Span[5] = _random.Next(2138);
-            write.Span[6] = _random.Next(2138);
-            write.Span[7] = _random.Next(2138);
+            write.Span[4] = Random.Next(2138);
+            write.Span[5] = Random.Next(2138);
+            write.Span[6] = Random.Next(2138);
+            write.Span[7] = Random.Next(2138);
         }
 
         GL.DispatchCompute(32, 1, 1);//Usually best with 32 or 64 muliple
