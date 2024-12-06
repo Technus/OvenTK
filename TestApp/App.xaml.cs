@@ -10,14 +10,15 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        var window = new MainWindow();
         var view = new MainView();
         var viewModel = new MainViewModel();
+        
         view.DataContext = viewModel;
         view.GLWpfControl.Render += viewModel.OnRender;
+
+        var window = new MainWindow();
         window.DataContext = view;
         MainWindow = window;
-
         MainWindow.Show();
     }
 }

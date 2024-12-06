@@ -53,4 +53,8 @@ public static class Extensions
     public static int SizeOf<T>(this T[] arr) => arr.Length * Unsafe.SizeOf<T>();
 
     public static int SizeOf<T>(this T _) where T : struct => Unsafe.SizeOf<T>();
+
+    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
 }
