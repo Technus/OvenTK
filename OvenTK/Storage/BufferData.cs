@@ -73,7 +73,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(ref readonly Memory<V> memory, DrawElementsType drawType = _drawTypeNone) => Recreate(in memory, Hint, drawType);
+    public void Recreate<V>(ref readonly Memory<V> memory, DrawElementsType drawType = _drawTypeNone) => Recreate(in memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -98,7 +98,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(ref readonly ReadOnlyMemory<V> memory, DrawElementsType drawType = _drawTypeNone) => Recreate(in memory, Hint, drawType);
+    public void Recreate<V>(ref readonly ReadOnlyMemory<V> memory, DrawElementsType drawType = _drawTypeNone) => Recreate(in memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -123,7 +123,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(ref readonly Span<V> memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
+    public void Recreate<V>(ref readonly Span<V> memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -148,7 +148,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(ref readonly ReadOnlySpan<V> memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
+    public void Recreate<V>(ref readonly ReadOnlySpan<V> memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -173,7 +173,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(ref readonly V memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
+    public void Recreate<V>(ref readonly V memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(in memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -198,7 +198,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
+    public void Recreate<V>(V[] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -208,7 +208,7 @@ public class BufferData : BufferBase, IDisposable
     /// <param name="memory"></param>
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
+    public void Recreate<V>(V[] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
     {
         Size = memory.SizeOf();
         DrawType = GetDrawType<V>(drawType, _drawElementsType);
@@ -222,7 +222,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[,] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
+    public void Recreate<V>(V[,] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -232,7 +232,7 @@ public class BufferData : BufferBase, IDisposable
     /// <param name="memory"></param>
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[,] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
+    public void Recreate<V>(V[,] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
     {
         Size = memory.SizeOf();
         DrawType = GetDrawType<V>(drawType, _drawElementsType);
@@ -246,7 +246,7 @@ public class BufferData : BufferBase, IDisposable
     /// <typeparam name="V"></typeparam>
     /// <param name="memory"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[,,] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
+    public void Recreate<V>(V[,,] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
 
     /// <summary>
     /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
@@ -256,13 +256,37 @@ public class BufferData : BufferBase, IDisposable
     /// <param name="memory"></param>
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
-    public unsafe void Recreate<V>(V[,,] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
+    public void Recreate<V>(V[,,] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
     {
         Size = memory.SizeOf();
         DrawType = GetDrawType<V>(drawType, _drawElementsType);
         GL.NamedBufferData(Handle, Size, memory, hint);
     }
 
+    /// <summary>
+    /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
+    /// Fills it with <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="drawType"></param>
+    public void Recreate<V>(V[,,,] memory, DrawElementsType drawType = _drawTypeNone) where V : struct => Recreate(memory, Hint, drawType);
+
+    /// <summary>
+    /// Orphans the buffer and creates a new one on the same OpenGL <see cref="BufferBase.Handle"/><br/>
+    /// Fills it with <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    public unsafe void Recreate<V>(V[,,,] memory, BufferUsageHint hint, DrawElementsType drawType = _drawTypeNone) where V : struct
+    {
+        Size = memory.SizeOf();
+        DrawType = GetDrawType<V>(drawType, _drawElementsType);
+        fixed (V* ptr = memory)
+            GL.NamedBufferData(Handle, Size, (nint)ptr, hint);
+    }
 
     /// <summary>
     /// Creates Buffers without data
@@ -391,7 +415,7 @@ public class BufferData : BufferBase, IDisposable
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        fixed(V* p = &memory)
+        fixed (V* p = &memory)
             GL.NamedBufferData(handle, size, (nint)p, hint);
         return new(handle, size, hint, GetDrawType<V>(drawType));
     }
@@ -441,6 +465,23 @@ public class BufferData : BufferBase, IDisposable
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
         GL.NamedBufferData(handle, size, memory, hint);
+        return new(handle, size, hint, GetDrawType<V>(drawType));
+    }
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
+    public unsafe static BufferData CreateFrom<V>(V[,,,] memory, BufferUsageHint hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct
+    {
+        GL.CreateBuffers(1, out int handle);
+        var size = memory.SizeOf();
+        fixed (V* ptr = memory)
+            GL.NamedBufferData(handle, size, (nint)ptr, hint);
         return new(handle, size, hint, GetDrawType<V>(drawType));
     }
 

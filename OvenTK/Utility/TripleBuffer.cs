@@ -11,8 +11,8 @@ public class TripleBuffer<T>
     private readonly SemaphoreSlim _staleSemaphore = new(1, 1);
     private readonly SemaphoreSlim _readsSemaphore = new(1, 1);
     private readonly SemaphoreSlim _writesSemaphore = new(1, 1);
-    private int _reads = 0;
-    private int _writes = 0;
+    private int _reads;
+    private int _writes;
 
     private int _1st = 0;
     private int _2nd = 1;

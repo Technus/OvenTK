@@ -73,6 +73,14 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="arr"></param>
     /// <returns></returns>
+    public static int SizeOf<T>(this T[,,,] arr) => arr.Length * Unsafe.SizeOf<T>();
+
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T[,,] arr) => arr.Length * Unsafe.SizeOf<T>();
 
     /// <summary>
@@ -106,7 +114,80 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct =>
+        new((void*)p, bytes / sizeof(T));
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this Span<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this byte[] data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
 
     /// <summary>
     /// Unsafe helper to wrap <see langword="nint"/> pointer to data of size <paramref name="bytes"/> into read only span
@@ -115,7 +196,92 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct =>
+        new((void*)p, bytes / sizeof(T));
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this Span<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this ReadOnlySpan<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this byte[] data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
 
     /// <summary>
     /// Makes vertexes for <see cref="MakeRectIndices"/> for rectangle based on 2 triangles<br/>

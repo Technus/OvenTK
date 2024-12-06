@@ -24,7 +24,7 @@ public class MainViewModelOld : DependencyObject
     ];
     private const int _count = 100_000;
     private const int _cpus = 4;
-    private readonly TripleBufferSimple<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
+    private readonly TripleBufferSimple<Vector4[][]> _triple = new(() => [new Vector4[_count], new Vector4[_count]]);
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
@@ -138,8 +138,8 @@ public class MainViewModelOld : DependencyObject
             //var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
             //span.CopyTo(map.Span());
 
-            fixed(void* src = b0)
-            fixed(void* dest = map.Span)
+            fixed (void* src = b0)
+            fixed (void* dest = map.Span)
                 memcpy((nint)dest, (nint)src, _count);
         }
 

@@ -227,6 +227,23 @@ public class BufferStorage : BufferBase, IDisposable
     }
 
     /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
+    public unsafe static BufferStorage CreateFrom<V>(V[,,,] memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct
+    {
+        GL.CreateBuffers(1, out int handle);
+        var size = memory.SizeOf();
+        fixed (V* ptr = memory)
+            GL.NamedBufferStorage(handle, size, (nint)ptr, hint);
+        return new(handle, size, hint, GetDrawType<V>(drawType));
+    }
+
+    /// <summary>
     /// Disposes buffer calls and deletes it
     /// </summary>
     /// <param name="disposing"></param>
