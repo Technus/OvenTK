@@ -29,7 +29,7 @@ public static class EnumStorage<TEnum> where TEnum : struct, Enum
     static EnumStorage()
     {
         Type = typeof(TEnum);
-        EnumValues = Enum.GetValues(Type).Cast<TEnum>().ToList();
+        EnumValues = Enum.GetValues(Type).Cast<TEnum>().Distinct().ToList();
         EnumValuesWithoutDefault = EnumValues.Except([default]).ToList();
         Descriptions = EnumValues.ToDictionary(x=>x, GetDescriptionWithReflection);
     }

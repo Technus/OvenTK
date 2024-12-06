@@ -5,6 +5,7 @@ using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using OvenTK.Lib.Storage;
 #pragma warning disable CS8618, S1450
 
 namespace OvenTK.TestApp;
@@ -82,11 +83,14 @@ public class MainViewModel : DependencyObject
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
     private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;
     private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite, _vBezier, _vBezier2, _vPolyline2;
-    private Texture _tDigits;
+    private Texture _tDigits, _tLines;
     private TextureBuffer _bComputeTexIn, _bComputeTexOut, _bColorBezier;
     private BitmapFont _fConsolas;
     private SpriteSheet<Sprite> _sSprites;
     private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2, _pCompute;
+    private FrameBuffer _fbLines;
+    private int _fbMain;
+    private RenderBuffer _rbLines;
     private bool _invalidated = true;
     private Uniform _uniform = new()
     {
@@ -380,6 +384,8 @@ public class MainViewModel : DependencyObject
 
     private void GLSetup()
     {
+        GL.Disable(EnableCap.CullFace);
+
         //default screen color
         GL.ClearColor(Color.Gray);
 
@@ -422,7 +428,15 @@ public class MainViewModel : DependencyObject
         _bColorBezier = TextureBuffer.CreateFrom(_dColorBezier, SizedInternalFormat.Rgba8ui);
         _bColorBezier.Use(textureCount++);
 
+        _tLines = Texture.Create(1, 1, TextureTarget.Texture2D, 1);
+
         Debug.WriteLine("Used texture units {0}", textureCount);
+
+        //Output buffers for layers
+        _rbLines = RenderBuffer.Create(1, 1, RenderbufferStorage.Rgb8ui);
+        _fbLines = FrameBuffer.Create([
+            FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
+        ]);
 
         //Common indices for a rectangle
         _sRectIndices = BufferStorage.CreateFrom(Extensions.MakeRectIndices());
@@ -559,6 +573,8 @@ public class MainViewModel : DependencyObject
 
     public void OnRender(TimeSpan t)
     {
+        _fbMain = FrameBuffer.CurrentId();
+
         _fpsCounter.PushEvent();
         FPS = _fpsCounter.Frequency;
 
@@ -586,7 +602,9 @@ public class MainViewModel : DependencyObject
         _invalidated = false;
 
         GL.Disable(EnableCap.DepthTest);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//clear screen
+
+        _fbLines.Use();
+        GL.Clear(ClearBufferMask.ColorBufferBit);//clear screen
 
         //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
@@ -605,8 +623,16 @@ public class MainViewModel : DependencyObject
         _vPolyline2.Use();
         GL.DrawArrays(PrimitiveType.Lines, 0, _beziers * 2 * 2);//*2 cause 2 points , *2 cause the source buffer is lineadjencies so 2x longer
 
+        _fbLines.Use(FramebufferTarget.ReadFramebuffer);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fbMain);
+        GL.BlitFramebuffer(
+            0, 0, (int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, 
+            0, 0, (int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, 
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
+
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fbMain);
+        GL.Clear(ClearBufferMask.DepthBufferBit);//clear screen
         GL.Enable(EnableCap.DepthTest);
-        GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
 
         if (_uniform.CameraScale >= 0.0625)//draw boxes
         {
@@ -679,6 +705,17 @@ public class MainViewModel : DependencyObject
             X = (float)e.NewSize.Width,
             Y = (float)e.NewSize.Height,
         };
+        Dispatcher.Invoke(() =>
+        {
+            Interlocked.Exchange(ref _tLines, Texture.Create((int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, TextureTarget.Texture2D, 1)).Dispose();
+            //Interlocked.Exchange(ref _rbLines, RenderBuffer.Create((int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, RenderbufferStorage.Rgba8ui)).Dispose();
+            Interlocked.Exchange(ref _fbLines, FrameBuffer.Create([
+                //FrameBufferAtt.CreateFrom(_rbLines, FramebufferAttachment.ColorAttachment0),
+                FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
+            ])).Dispose();
+            if (_fbLines.CheckStatus() is not FramebufferStatus.FramebufferComplete)
+                throw new InvalidOperationException();
+        });
         _invalidated = true;//invalidate to force redraw
     }
 }

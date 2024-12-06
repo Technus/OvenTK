@@ -92,7 +92,7 @@ public class SpriteSheet : IDisposable
             return (img.X, img.Y, rectImg.ImageResult);
         });
 
-        var spriteSheet = Texture.CreateFrom(mappedImages, mapping.Width, mapping.Height, mipLevels);
+        var spriteSheet = Texture.CreateFrom(mappedImages, mapping.Width, mapping.Height, TextureTarget.Texture2D, mipLevels);
 
         var buffer = BufferStorage.CreateFrom(data);
         var texBuffer = TextureBuffer.CreateFrom(buffer, SizedInternalFormat.Rgba16i);

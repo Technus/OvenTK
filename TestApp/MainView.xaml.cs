@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using OvenTK.Lib;
+using System.Windows.Controls;
 
 namespace OvenTK.TestApp;
 
@@ -14,11 +15,11 @@ public partial class MainView : UserControl
         GLWpfControl.Start(new()
         {
             MajorVersion = 4,
-            MinorVersion = 3,
+            MinorVersion = 5,
         });
 
 #if DEBUG
-        Extensions.EnableDebug(false);
+        DebugExtensions.EnableDebug(false);
 #endif
     }
 }

@@ -64,6 +64,23 @@ public static class DebugExtensions
     }
 
     /// <summary>
+    /// Retrieve error code.
+    /// </summary>
+    public static ErrorCode GetError() =>
+        GL.GetError();
+
+    /// <summary>
+    /// Throws on error
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static void ThrowIfError()
+    {
+        var errorCode = GetError();
+        if (errorCode is not ErrorCode.NoError)
+            throw new InvalidOperationException(errorCode.ToString());
+    }
+
+    /// <summary>
     /// Creates a debug group scope, this is a helper for method call
     /// </summary>
     /// <param name="id"></param>

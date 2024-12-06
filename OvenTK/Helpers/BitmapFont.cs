@@ -112,7 +112,7 @@ public class BitmapFont : IDisposable
         //Load texures
         var pages = new Texture[font.Pages.Page.Count];
         for (int page = 0; page < pages.Length; page++)
-            pages[page] = Texture.CreateFrom(textureResolver(font.Pages.Page[page].File!), mipLevels);
+            pages[page] = Texture.CreateFrom(textureResolver(font.Pages.Page[page].File!), TextureTarget.Texture2D, mipLevels);
 
         //Map char to GPU glyph
         var charCount = font.Chars.Char.Count;

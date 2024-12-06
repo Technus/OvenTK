@@ -11,6 +11,11 @@ public abstract class TextureBase
     public int Handle { get; protected set; }
 
     /// <summary>
+    /// Texture type
+    /// </summary>
+    public TextureTarget Type { get; protected set; }
+
+    /// <summary>
     /// Casts to <see cref="Handle"/>
     /// </summary>
     /// <param name="data"></param>

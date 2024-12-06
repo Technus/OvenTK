@@ -21,10 +21,12 @@ public class TextureBuffer : TextureBase, IDisposable
     /// </summary>
     /// <param name="handle"></param>
     /// <param name="buffer"></param>
-    protected TextureBuffer(int handle, BufferBase? buffer = default)
+    /// <param name="target"></param>
+    protected TextureBuffer(int handle, BufferBase? buffer = default, TextureTarget target = TextureTarget.TextureBuffer)
     {
         Handle = handle;
         Buffer = buffer;
+        Type = target;
     }
 
     /// <summary>
@@ -46,13 +48,15 @@ public class TextureBuffer : TextureBase, IDisposable
     /// </summary>
     /// <param name="buffer"></param>
     /// <param name="format"></param>
+    /// <param name="target"></param>
     /// <returns></returns>
-    public static TextureBuffer CreateFrom(BufferBase buffer, SizedInternalFormat format = SizedInternalFormat.Rgba8)
+    public static TextureBuffer CreateFrom(BufferBase buffer, SizedInternalFormat format = SizedInternalFormat.Rgba8, TextureTarget target = TextureTarget.TextureBuffer)
     {
         // Generate handle
-        GL.CreateTextures(TextureTarget.TextureBuffer, 1, out int handle);
+        GL.CreateTextures(target, 1, out int handle);
         GL.TextureBuffer(handle, format, buffer);
-        return new TextureBuffer(handle);
+
+        return new TextureBuffer(handle, buffer, target);
     }
 
     /// <summary>
