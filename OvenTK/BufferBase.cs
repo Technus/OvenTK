@@ -138,19 +138,27 @@ public abstract class BufferBase
         GL.GetNamedBufferSubData(Handle, readOffset, size, value);
     }
 
-    public BufferMap<T> Map<T>(BufferAccess bufferAccess = BufferAccess.ReadWrite) where T : struct
+    public Mapping<T> Map<T>(BufferAccess bufferAccess = BufferAccess.ReadWrite) where T : struct
     {
         var p = GL.MapNamedBuffer(Handle, bufferAccess);
         return new(this, p);
     }
 
-    public BufferRangeMap<T> Map<T>(nint offset, int length, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
+    public RangeMapping<T> Map<T>(nint offset, int length, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
     {
         var p = GL.MapNamedBufferRange(Handle, offset, length, bufferAccess);
         return new(this, p, offset, length);
     }
 
-    public readonly struct BufferMap<T>(BufferBase buffer, nint p) : IDisposable where T : struct
+    public RangeMapping<T> MapPage<T>(int page, int totalPages, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
+    {
+        var length = Size / totalPages;
+        nint offset = length * page;
+        var p = GL.MapNamedBufferRange(Handle, offset, length, bufferAccess);
+        return new(this, p, offset, length);
+    }
+
+    public readonly struct Mapping<T>(BufferBase buffer, nint p) : IDisposable where T : struct
     {
         public nint Pointer => p;
         public BufferBase Buffer => buffer;
@@ -168,16 +176,16 @@ public abstract class BufferBase
             => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Buffer.Size - offset : length);
         public void Dispose() => GL.UnmapNamedBuffer(Buffer.Handle);
 
-        public BufferRangeMap<T> BufferRangeMap() => new(Buffer, Pointer, default, Buffer.Size);
+        public RangeMapping<T> BufferRangeMap() => new(Buffer, Pointer, default, Buffer.Size);
         public Span<T> Span() => Pointer.AsSpan<T>(Buffer.Size);
         public ReadOnlySpan<T> ReadOnlySpan() => Pointer.AsReadOnlySpan<T>(Buffer.Size);
 
-        public static implicit operator BufferRangeMap<T>(BufferMap<T> map) => new(map.Buffer, map.Pointer, default, map.Buffer.Size);
-        public static implicit operator Span<T>(BufferMap<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
-        public static implicit operator ReadOnlySpan<T>(BufferMap<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator RangeMapping<T>(Mapping<T> map) => new(map.Buffer, map.Pointer, default, map.Buffer.Size);
+        public static implicit operator Span<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator ReadOnlySpan<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
     }
 
-    public readonly struct BufferRangeMap<T>(BufferBase buffer, nint p, nint offset, int size) : IDisposable where T : struct
+    public readonly struct RangeMapping<T>(BufferBase buffer, nint p, nint offset, int size) : IDisposable where T : struct
     {
         public nint Pointer => p;
         public nint Offset => offset;
@@ -200,7 +208,7 @@ public abstract class BufferBase
         public Span<T> Span() => Pointer.AsSpan<T>(Size);
         public ReadOnlySpan<T> ReadOnlySpan() => Pointer.AsReadOnlySpan<T>(Size);
 
-        public static implicit operator Span<T>(BufferRangeMap<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
-        public static implicit operator ReadOnlySpan<T>(BufferRangeMap<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
     }
 }
