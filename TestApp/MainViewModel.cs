@@ -322,7 +322,7 @@ public class MainViewModel : DependencyObject
                             var (dx, dy) = (-59, -24);//pre rotation
                             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
                                                                                         //then text is written to buffer array
-                            _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X + rdx), (float)(b.xyar[j].Y + rdy), rotation, Random.Next(10000000).ToString().AsSpan());
+                            _fConsolas.WriteTextTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X + rdx), (float)(b.xyar[j].Y + rdy), rotation, Random.Next(10000000).ToString().AsSpan());
 
                             b.sprites[j * _spritesPerInstance] = new()
                             {
@@ -374,7 +374,7 @@ public class MainViewModel : DependencyObject
             var td = Extensions.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
 
-            await Task.Delay(10, token).ConfigureAwait(false);
+            await Task.Delay(1000, token).ConfigureAwait(false);
         }
     }
 
@@ -643,8 +643,7 @@ public class MainViewModel : DependencyObject
                 _uniform.DigitDiv = (int)Math.Pow(10, idDigits - i - 1);
                 _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, +_digitHeight / 2);
                 _dUniform.Recreate(ref _uniform);
-                GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-                    default, _count, _uniform.InstanceBase);
+                GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, _count);
             }
 
             //draw prog using font instead

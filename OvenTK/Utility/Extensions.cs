@@ -1,6 +1,5 @@
 ﻿using StbImageSharp;
 using System.Diagnostics;
-using System.Text;
 
 namespace OvenTK.Lib;
 /// <summary>

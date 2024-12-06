@@ -1,7 +1,6 @@
 ﻿using Mapper;
 using StbImageSharp;
 using System.Diagnostics;
-using System.Xml.Serialization;
 
 namespace OvenTK.Lib;
 /// <summary>

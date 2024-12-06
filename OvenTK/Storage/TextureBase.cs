@@ -5,15 +5,6 @@
 /// </summary>
 public abstract class TextureBase
 {
-    [ThreadStatic]
-    private static Dictionary<int, TextureBase>? _textures;
-    private static Dictionary<int, TextureBase> Textures => _textures ??= [];
-    /// <summary>
-    /// List of currently loaded textures, as long as the use method was used
-    /// </summary>
-    /// <remarks>Backed by ThreadStatic Field to support multiple contexts</remarks>
-    public static IReadOnlyDictionary<int, TextureBase> LoadedTextures => Textures;
-
     /// <summary>
     /// OpenGL handle
     /// </summary>
@@ -34,7 +25,6 @@ public abstract class TextureBase
     /// <param name="unit"></param>
     public void Use(int unit)
     {
-        Textures[unit] = this;
         GL.BindTextureUnit(unit, Handle);
     }
 
@@ -49,7 +39,6 @@ public abstract class TextureBase
     /// <param name="format"></param>
     public void UseImage(int unit, TextureAccess access = TextureAccess.WriteOnly, SizedInternalFormat format = SizedInternalFormat.R32f)
     {
-        Textures[unit] = this;
         GL.BindImageTexture(unit, Handle, 0, false, 0, access, format);
     }
 }
