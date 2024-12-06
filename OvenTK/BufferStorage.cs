@@ -1,5 +1,8 @@
-﻿namespace OvenTK.Lib;
+﻿using System.Diagnostics;
 
+namespace OvenTK.Lib;
+
+[DebuggerDisplay("{Handle}:{Size}:{Flags}")]
 public class BufferStorage : IDisposable
 {
     private const BufferStorageFlags _default = BufferStorageFlags.None;
@@ -11,6 +14,8 @@ public class BufferStorage : IDisposable
         Size = byteSize;
         Flags = flags;
     }
+
+    public static implicit operator int(BufferStorage data) => data.Handle;
 
     public int Handle { get; protected set; }
     public int Size { get; protected set; }

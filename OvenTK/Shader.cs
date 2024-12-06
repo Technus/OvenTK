@@ -1,6 +1,10 @@
-﻿namespace OvenTK.Lib;
+﻿using System.Diagnostics;
+
+namespace OvenTK.Lib;
 
 // A simple class meant to help create shaders.
+
+[DebuggerDisplay("{Handle}")]
 public class Shader : IDisposable
 {
     private bool _disposed;
@@ -195,6 +199,7 @@ public class Shader : IDisposable
             Handle = default;
 
             _uniformLocations = null;
+
             _disposed = true;
         }
     }

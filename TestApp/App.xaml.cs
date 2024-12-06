@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace TestApp;
+namespace OvenTK.TestApp;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>

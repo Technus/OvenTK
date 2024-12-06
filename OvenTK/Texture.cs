@@ -1,26 +1,26 @@
 ﻿using StbImageSharp;
+using System.Diagnostics;
 
 namespace OvenTK.Lib;
 
 // A helper class, much like Shader, meant to simplify loading textures.
+
+[DebuggerDisplay("{Handle}:{Width}/{Height}")]
 public class Texture : IDisposable
 {
     private const int _mipDefault = 4;
     private bool _disposed;
-    private int handle;
-    private readonly int width;
-    private readonly int height;
 
     protected Texture(int handle, int width, int height)
     {
-        this.handle = handle;
-        this.width = width;
-        this.height = height;
+        Handle = handle;
+        Width = width;
+        Height = height;
     }
 
-    public int Handle => handle;
-    public int Width => width;
-    public int Height => height;
+    public int Handle { get; private set; }
+    public int Width { get; private set; }
+    public int Height { get; private set; }
 
     public static Texture CreateFrom(byte[] bytes, int mipLevels = _mipDefault)
     {
@@ -101,8 +101,7 @@ public class Texture : IDisposable
     // The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
     public void Use(int unit)
     {
-        GL.ActiveTexture(TextureUnit.Texture0 + unit);
-        GL.BindTexture(TextureTarget.Texture2D, Handle);
+        GL.BindTextureUnit(unit, Handle);
     }
 
     protected virtual void Dispose(bool disposing)
@@ -114,25 +113,17 @@ public class Texture : IDisposable
                 //Nothing
             }
 
-            GL.DeleteTextures(1, ref handle);
-            handle = default;
+            GL.DeleteTexture(Handle);
+            Handle = default;
 
-            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-            // TODO: set large fields to null
             _disposed = true;
         }
     }
 
-    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-    // ~Texture()
-    // {
-    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-    //     Dispose(disposing: false);
-    // }
+    ~Texture() => Dispose(disposing: false);
 
     public void Dispose()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
