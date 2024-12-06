@@ -176,9 +176,9 @@ public abstract class BufferBase
             => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Buffer.Size - offset : length);
         public void Dispose() => GL.UnmapNamedBuffer(Buffer.Handle);
 
-        public RangeMapping<T> BufferRangeMap() => new(Buffer, Pointer, default, Buffer.Size);
-        public Span<T> Span() => Pointer.AsSpan<T>(Buffer.Size);
-        public ReadOnlySpan<T> ReadOnlySpan() => Pointer.AsReadOnlySpan<T>(Buffer.Size);
+        public RangeMapping<T> RangeMap => new(Buffer, Pointer, default, Buffer.Size);
+        public Span<T> Span => Pointer.AsSpan<T>(Buffer.Size);
+        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Buffer.Size);
 
         public static implicit operator RangeMapping<T>(Mapping<T> map) => new(map.Buffer, map.Pointer, default, map.Buffer.Size);
         public static implicit operator Span<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
@@ -205,8 +205,8 @@ public abstract class BufferBase
             => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset + Offset, length is 0 ? Size - offset : length);
         public void Dispose() => GL.UnmapNamedBuffer(Buffer.Handle);
 
-        public Span<T> Span() => Pointer.AsSpan<T>(Size);
-        public ReadOnlySpan<T> ReadOnlySpan() => Pointer.AsReadOnlySpan<T>(Size);
+        public Span<T> Span => Pointer.AsSpan<T>(Size);
+        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Size);
 
         public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
         public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);

@@ -3,6 +3,7 @@ using OvenTK.Lib;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -24,10 +25,7 @@ public class MainViewModel : DependencyObject
     ];
     private const int _count = 12_000_000;
     private const int _cpus = 4;
-    private const int _pages = 3;
-    private TripleBufferCollaborative _triple = new();
-    private readonly Vector4[] _positions = new Vector4[_count * _pages];
-    private readonly Vector4[] _values = new Vector4[_count * _pages];
+    private readonly TripleBuffer<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
@@ -81,27 +79,25 @@ public class MainViewModel : DependencyObject
             _tpsCounter.PushFrame();
             await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.FPS);
 
-            var w = _triple.BeginUpdate();
+            using var w = _triple.Write();
+            var b = w.Buffer;
+            var (b0, b1) = (b[0], b[1]);
 
-            var offset = w * _count;
             var batch = _count / cpus;
 
             var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
             {
                 var random = new Random();
-                var start = offset + i * batch;
+                var start = i * batch;
                 var end = start + batch;
                 for (int j = start; j < end; j++)
                 {
-                    _positions[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
-                    _values[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
+                    b0[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
+                    b1[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
                 }
             }));
 
             await Task.WhenAll(tasks);
-
-            if (_triple.FinishUpdate())
-                Debug.WriteLine("CPU TOO FAST");
         }
     }
 
@@ -117,45 +113,35 @@ public class MainViewModel : DependencyObject
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         //using var sync = Sync.Create();
-        var r = _triple.BeginRead();
+        using var r = _triple.Read();
+        var b = r.Value;
 
-        using (var map = _buffers[2].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
+        (_buffers[2] as BufferData)!.Recreate(b[0]);
+        (_buffers[4] as BufferData)!.Recreate(b[1]);
+
+        /*
+        using (var map = _buffers[2].MapPage<Vector4>(r.Id, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
         {
-            var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
+            //var span = _positions.AsSpan().Slice(r * _count, _count); //map.Span();
             //span.CopyTo(map.Span());
 
-            fixed(void* src = span)
-            fixed(void* dest = map.Span())
+            fixed(void* src = b0)
+            fixed(void* dest = map.Span)
                 memcpy((nint)dest, (nint)src, _count);
         }
 
-        using (var map = _buffers[4].MapPage<Vector4>(r, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
+        using (var map = _buffers[4].MapPage<Vector4>(r.Id, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
         {
-            var span = _values.AsSpan().Slice(r * _count, _count); //map.Span();
+            //var span = _values.AsSpan().Slice(r * _count, _count); //map.Span();
             //span.CopyTo(map.Span());
 
-            fixed (void* src = span)
-            fixed (void* dest = map.Span())
+            fixed (void* src = b1)
+            fixed (void* dest = map.Span)
                 memcpy((nint)dest, (nint)src, _count);
         }
-
-        if (_triple.FinishRead())
-            Debug.WriteLine("GPU TOO FAST");
-        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count, r * _count);
+        */
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
         //sync.WaitClient();
-    }
-
-    private void DataSetup()
-    {
-        var rand = new Random();
-        for (int i = 0; i < _count; i++)
-        {
-            _positions[i] = new Vector4((float)(rand.NextDouble() - 0.5) * 2, (float)(rand.NextDouble() - 0.5) * 2, 0f, 1f);
-        }
-        for (int i = 0; i < _values.Length; i++)
-        {
-            _values[i] = new Vector4((float)rand.NextDouble() / 4, (float)rand.NextDouble() / 2, (float)rand.NextDouble(), (float)rand.NextDouble());
-        }
     }
 
     private void GLSetup()
@@ -163,11 +149,11 @@ public class MainViewModel : DependencyObject
         GL.ClearColor(Color.LightGray);
 
         _buffers = [
-            BufferData.CreateFrom(_vertices),
-            BufferData.CreateFrom(_indices),
-            BufferData.CreateFrom(_positions, BufferUsageHint.DynamicDraw),
-            BufferData.CreateFrom(ref _uniform),
-            BufferData.CreateFrom(_values, BufferUsageHint.DynamicDraw),
+            BufferStorage.CreateFrom(_vertices),
+            BufferStorage.CreateFrom(_indices),
+            BufferData.Create(0, BufferUsageHint.DynamicDraw),
+            BufferStorage.CreateFrom(ref _uniform),
+            BufferData.Create(0, BufferUsageHint.DynamicDraw),
         ];
 
         _vao = VertexArray.Create(_buffers[1], [
