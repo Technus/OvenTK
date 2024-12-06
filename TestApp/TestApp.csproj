@@ -6,6 +6,7 @@
 		<UseWPF>true</UseWPF>
 		<!--Due to WPF bug assembly name should be set directly, we can also set a nice user friendly name here-->
 		<AssemblyName>OvenTK Test App</AssemblyName>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<Choose>
