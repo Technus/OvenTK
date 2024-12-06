@@ -221,7 +221,7 @@ public class MainViewModel : DependencyObject
     public MainViewModel()
     {
         GLSetup();
-        Task.Run(() => DataWriteMapped().ConfigureAwait(false));
+        Task.Run(() => DataWrite().ConfigureAwait(false));
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ public class MainViewModel : DependencyObject
     /// <param name="token"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public async Task DataWriteMapped(int cpus = _cpus, CancellationToken token = default)
+    public async Task DataWrite(int cpus = _cpus, CancellationToken token = default)
     {
         if (_count % cpus is not 0)
             throw new InvalidOperationException();
@@ -301,7 +301,7 @@ public class MainViewModel : DependencyObject
         //default screen color
         GL.ClearColor(Color.Gray);
 
-        //depth testing so layers dont overlap
+        //depth testing so layers/objects dont overlap
         GL.DepthFunc(DepthFunction.Lequal);
 
         //blending of alpha textures like the font so transparency works
@@ -311,18 +311,18 @@ public class MainViewModel : DependencyObject
         var textureCount = 0;
 
         //Add hacky digits texure
-        _tDigits = Texture.CreateFrom(Application.GetResourceStream(new Uri(@"\Resources\digits.png", UriKind.Relative)).Stream);
+        _tDigits = Texture.CreateFrom(Application.GetResourceStream(new Uri(@"\Resources\Fonts\digits.png", UriKind.Relative)).Stream);
         _tDigits.Use(textureCount++);
 
         //Create helper for bitmap font
         _fConsolas = BitmapFont.CreateFrom(
-            Application.GetResourceStream(new Uri(@"\Resources\consolas32_.fnt", UriKind.Relative)).Stream,
-            file => Application.GetResourceStream(new Uri(@$"\Resources\{file}", UriKind.Relative)).Stream);
+            Application.GetResourceStream(new Uri(@"\Resources\Fonts\consolas32_.fnt", UriKind.Relative)).Stream,
+            file => Application.GetResourceStream(new Uri(@$"\Resources\Fonts\{file}", UriKind.Relative)).Stream);
         textureCount = _fConsolas.UseBase(textureCount);
 
         //Create helper for sprite sheet
         _sSprites = SpriteSheet<Sprite>.CreateFrom(
-            sprite => Application.GetResourceStream(new Uri(@$"\Resources\{sprite.GetDescription()}", UriKind.Relative)).Stream);
+            sprite => Application.GetResourceStream(new Uri(@$"\Resources\Sprites\{sprite.GetDescription()}", UriKind.Relative)).Stream);
         textureCount = _sSprites.UseBase(textureCount);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
@@ -388,20 +388,20 @@ public class MainViewModel : DependencyObject
 
         //shader program definitions
         _pRect = ShaderProgram.CreateFrom([
-            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\rect.vert", UriKind.Relative)).Stream),
-            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\rect.frag", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\rect.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\rect.frag", UriKind.Relative)).Stream),
         ]);
         _pDigits = ShaderProgram.CreateFrom([
-            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\digit.vert", UriKind.Relative)).Stream),
-            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\digit.frag", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\digit.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\digit.frag", UriKind.Relative)).Stream),
         ]);
         _pText = ShaderProgram.CreateFrom([
-            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\text.vert", UriKind.Relative)).Stream),
-            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\text.frag", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\text.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\text.frag", UriKind.Relative)).Stream),
         ]);
         _pSprite = ShaderProgram.CreateFrom([
-            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\sprite.vert", UriKind.Relative)).Stream),
-            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\sprite.frag", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\sprite.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\sprite.frag", UriKind.Relative)).Stream),
         ]);
     }
 
