@@ -88,7 +88,7 @@ public class SpriteSheet : IDisposable
         {
             if (img.ImageInfo is not RectImage rectImg)
                 throw new InvalidOperationException("invalid image");
-            data[id++] = new((short)img.X, (short)img.Y, (short)rectImg.Width, (short)rectImg.Height);
+            data[id++] = new((short)img.X, (short)img.Y, (short)rectImg.ImageResult.Width, (short)rectImg.ImageResult.Height);
             return (img.X, img.Y, rectImg.ImageResult);
         });
 
@@ -363,12 +363,11 @@ public class SpriteSheet : IDisposable
         {
             if (disposing)
             {
-                // dispose managed state (managed objects)
+                TextureBuffer.Dispose();
+                Buffer.Dispose();
+                Texture.Dispose();
             }
 
-            TextureBuffer.Dispose();
-            Buffer.Dispose();
-            Texture.Dispose();
             _disposedValue = true;
         }
     }

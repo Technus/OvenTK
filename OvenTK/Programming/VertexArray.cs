@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
 
 namespace OvenTK.Lib;
 /// <summary>
@@ -91,12 +92,14 @@ public class VertexArray : IDisposable
         {
             if (disposing)
             {
-                //Nothing
+                GL.DeleteVertexArray(Handle);
+                Handle = default;
+                Attributes = default!;
             }
-
-            GL.DeleteVertexArray(Handle);
-            Handle = default;
-            Attributes = default!;
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteVertexArray(handle));
+            }
 
             _disposed = true;
         }

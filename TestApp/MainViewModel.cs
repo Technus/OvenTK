@@ -89,6 +89,7 @@ public class MainViewModel : DependencyObject
     private SpriteSheet<Sprite> _sSprites;
     private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2, _pCompute;
     private FrameBuffer _fbLines;
+    private RenderBuffer _rbLines;
     private int _fbMain;
     private bool _invalidated = true;
     private Uniform _uniform = new()
@@ -430,10 +431,10 @@ public class MainViewModel : DependencyObject
         _tLines = Texture.Create(1, 1, SizedInternalFormat.Rgba8, TextureTarget.Texture2D, Texture.MaxLevel_NoMip);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
-
+        _rbLines = RenderBuffer.Create(1, 1, RenderbufferStorage.Rgba8, RenderbufferTarget.Renderbuffer);
         //Output buffers for layers
         _fbLines = FrameBuffer.Create([
-            FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
+            FrameBufferAtt.CreateFrom(_rbLines, FramebufferAttachment.ColorAttachment0),
         ]);
 
         //Common indices for a rectangle
@@ -708,8 +709,9 @@ public class MainViewModel : DependencyObject
         Dispatcher.Invoke(() =>
         {
             Interlocked.Exchange(ref _tLines, Texture.Create(x, y, SizedInternalFormat.Rgba8, TextureTarget.Texture2D, Texture.MaxLevel_NoMip)).Dispose();
+            Interlocked.Exchange(ref _rbLines, RenderBuffer.Create(x, y, RenderbufferStorage.Rgba8, RenderbufferTarget.Renderbuffer)).Dispose();
             Interlocked.Exchange(ref _fbLines, FrameBuffer.Create([
-                FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
+                FrameBufferAtt.CreateFrom(_rbLines, FramebufferAttachment.ColorAttachment0),
             ])).Dispose();
             if (_fbLines.CheckStatus() is not FramebufferStatus.FramebufferComplete)
                 throw new InvalidOperationException();

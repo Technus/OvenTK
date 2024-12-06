@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
 
 namespace OvenTK.Lib;
 
@@ -660,21 +661,14 @@ public class BufferData : BufferBase, IDisposable
         {
             if (disposing)
             {
+                GL.DeleteBuffer(Handle);
+                Handle = default;
                 Size = default;
                 DrawType = _drawTypeNone;
             }
-
-            try
+            else
             {
-                GL.DeleteBuffer(Handle);
-            }
-            catch (AccessViolationException e)
-            {
-                Debug.WriteLine(e);
-            }
-            finally
-            {
-                Handle = default;
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteBuffer(handle));
             }
 
             _disposed = true;

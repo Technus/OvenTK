@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
 
 namespace OvenTK.Lib.Programming;
 
@@ -28,20 +29,12 @@ internal class Sampler : IDisposable
         {
             if (disposing)
             {
-                //Nothing
-            }
-
-            try
-            {
                 GL.DeleteSampler(Handle);
-            }
-            catch (AccessViolationException e)
-            {
-                Debug.WriteLine(e);
-            }
-            finally
-            {
                 Handle = default;
+            }
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteSampler(handle));
             }
 
             _disposed = true;

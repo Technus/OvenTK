@@ -1,4 +1,7 @@
-﻿namespace OvenTK.Lib.Storage;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
+
+namespace OvenTK.Lib.Storage;
 
 /// <summary>
 /// Render Output buffer
@@ -73,11 +76,13 @@ public class RenderBuffer : IDisposable
         {
             if (disposing)
             {
-                //Nothing
+                GL.DeleteRenderbuffer(Handle);
+                Handle = default;
             }
-
-            GL.DeleteRenderbuffer(Handle);
-            Handle = default;
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteRenderbuffer(handle));
+            }
 
             _disposed = true;
         }

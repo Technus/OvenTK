@@ -456,16 +456,15 @@ public class BitmapFont : IDisposable
         {
             if (disposing)
             {
-                // dispose managed state (managed objects)
+                TextureBuffer.Dispose();
+                Buffer.Dispose();
+
+                foreach (var page in Textures)
+                {
+                    page.Dispose();
+                }
             }
 
-            TextureBuffer.Dispose();
-            Buffer.Dispose();
-
-            foreach (var page in Textures)
-            {
-                page.Dispose();
-            }
             _stringToGpu.Clear();
             _disposedValue = true;
         }

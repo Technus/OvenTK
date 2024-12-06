@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
 
 namespace OvenTK.Lib;
 
@@ -69,11 +70,13 @@ public class TextureBuffer : TextureBase, IDisposable
         {
             if (disposing)
             {
-                //Nothing
+                GL.DeleteTexture(Handle);
+                Handle = default;
             }
-
-            GL.DeleteTexture(Handle);
-            Handle = default;
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteTexture(handle));
+            }
 
             _disposed = true;
         }

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using OvenTK.Lib.Utility;
+using System.Diagnostics;
 using System.Text;
 
 namespace OvenTK.Lib;
@@ -255,23 +256,14 @@ public class ShaderProgram : IDisposable
         {
             if (disposing)
             {
-                //Nothing
-            }
-
-            try
-            {
                 GL.DeleteProgram(Handle);
-            }
-            catch (AccessViolationException e)
-            {
-                Debug.WriteLine(e);
-            }
-            finally
-            {
                 Handle = default;
+                _uniformLocations = null;
             }
-
-            _uniformLocations = null;
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteProgram(handle));
+            }
 
             _disposed = true;
         }

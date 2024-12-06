@@ -1,4 +1,5 @@
 ﻿using Mapper;
+using OvenTK.Lib.Utility;
 using StbImageSharp;
 using System.Diagnostics;
 
@@ -180,11 +181,13 @@ public class Texture : TextureBase, IDisposable, IImageInfo
         {
             if (disposing)
             {
-                //Nothing
+                GL.DeleteTexture(Handle);
+                Handle = default;
             }
-
-            GL.DeleteTexture(Handle);
-            Handle = default;
+            else
+            {
+                FallbackFinalizer.FinalizeLater(Handle, static handle => GL.DeleteTexture(handle));
+            }
 
             _disposed = true;
         }
