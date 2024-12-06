@@ -1,6 +1,6 @@
 <Project>
 	<PropertyGroup Label="Common Properties">
-		<Version>1.0.5.0</Version>
+		<Version>1.0.6.0</Version>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
