@@ -387,6 +387,11 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public int PageCount() => _font.Pages!.Page!.Count;
 
+    /// <summary>
+    /// Gets the resolution of the selected page (not normalized)
+    /// </summary>
+    /// <param name="page"></param>
+    /// <returns></returns>
     public Vector2 GetPageResolution(int page = default) => new(_pages[page].Width, _pages[page].Height);
 
     /// <summary>
@@ -404,7 +409,7 @@ public class BitmapFont : IDisposable
     }
 
     /// <summary>
-    /// Dispose pattern
+    /// Dispose pattern, deletes the textures and buffers
     /// </summary>
     /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
@@ -413,7 +418,7 @@ public class BitmapFont : IDisposable
         {
             if (disposing)
             {
-                // TODO: dispose managed state (managed objects)
+                // dispose managed state (managed objects)
             }
 
             _texBuffer.Dispose();
@@ -428,10 +433,14 @@ public class BitmapFont : IDisposable
         }
     }
 
-
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~BitmapFont() => Dispose(disposing: false);
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Dispose pattern, deletes the textures and buffers
+    /// </summary>
     public void Dispose()
     {
         Dispose(disposing: true);
@@ -642,7 +651,7 @@ public class BitmapFont : IDisposable
     /// Holder for font texture definition
     /// </summary>
     [XmlRoot(ElementName = "page")]
-    public class Page : IComparable<CharDef>
+    public sealed class PageDef : IComparable<PageDef>, IEquatable<PageDef>
     {
         /// <summary>
         /// id of the page
@@ -661,11 +670,81 @@ public class BitmapFont : IDisposable
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(CharDef? other) => Id.CompareTo(other?.Id ?? default);
+        public int CompareTo(PageDef? other) => Id.CompareTo(other?.Id ?? default);
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(PageDef? other) => Id == (other?.Id ?? default);
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object? obj)
+        {
+            if (obj is not CharDef def)
+                return false;
+            return Id == def.Id;
+        }
+
+        /// <summary>
+        /// Returns <see cref="Id"/>
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() => Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator ==(PageDef l, PageDef r) => l.Id == r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator !=(PageDef l, PageDef r) => l.Id != r.Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator >=(PageDef l, PageDef r) => l.Id >= r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator <=(PageDef l, PageDef r) => l.Id <= r.Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator >(PageDef l, PageDef r) => l.Id > r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator <(PageDef l, PageDef r) => l.Id < r.Id;
     }
 
     /// <summary>
-    /// <see cref="BitmapFont.Page"/> array
+    /// <see cref="BitmapFont.PageDef"/> array
     /// </summary>
     [XmlRoot(ElementName = "pages")]
     public class Pages
@@ -674,14 +753,14 @@ public class BitmapFont : IDisposable
         /// List of pages...
         /// </summary>
         [XmlElement(ElementName = "page")]
-        public List<Page>? Page { get; set; }
+        public List<PageDef>? Page { get; set; }
     }
 
     /// <summary>
     /// Holder for glyph definition
     /// </summary>
     [XmlRoot(ElementName = "char")]
-    public class CharDef : IComparable<CharDef>
+    public sealed class CharDef : IComparable<CharDef>, IEquatable<CharDef>
     {
         /// <summary>
         /// id of the char
@@ -749,6 +828,76 @@ public class BitmapFont : IDisposable
         /// <param name="other"></param>
         /// <returns></returns>
         public int CompareTo(CharDef? other) => Id.CompareTo(other?.Id ?? default);
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(CharDef? other) => Id == (other?.Id ?? default);
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object? obj)
+        {
+            if (obj is not CharDef def)
+                return false;
+            return Id == def.Id;
+        }
+
+        /// <summary>
+        /// Returns <see cref="Id"/>
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() => Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator ==(CharDef l, CharDef r) => l.Id == r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator !=(CharDef l, CharDef r) => l.Id != r.Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator >=(CharDef l, CharDef r) => l.Id >= r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator <=(CharDef l, CharDef r) => l.Id <= r.Id;
+
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator >(CharDef l, CharDef r) => l.Id > r.Id;
+        /// <summary>
+        /// Compares <see cref="Id"/>
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static bool operator <(CharDef l, CharDef r) => l.Id < r.Id;
     }
 
     /// <summary>
@@ -777,17 +926,28 @@ public class BitmapFont : IDisposable
     public class Font
     {
         /// <summary>
-        /// 
+        /// <see cref="BitmapFont.Info"/>
         /// </summary>
         [XmlElement(ElementName = "info")]
         public Info? Info { get; set; }
 
+        /// <summary>
+        /// <see cref="BitmapFont.Common"/>
+        /// </summary>
         [XmlElement(ElementName = "common")]
         public Common? Common { get; set; }
 
+        /// <summary>
+        /// <see cref="BitmapFont.Pages"/><br/>
+        /// <see cref="PageDef"/>
+        /// </summary>
         [XmlElement(ElementName = "pages")]
         public Pages? Pages { get; set; }
 
+        /// <summary>
+        /// <see cref="BitmapFont.Chars"/><br/>
+        /// <see cref="CharDef"/>
+        /// </summary>
         [XmlElement(ElementName = "chars")]
         public Chars? Chars { get; set; }
     }

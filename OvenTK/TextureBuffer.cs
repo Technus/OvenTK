@@ -74,6 +74,9 @@ public class TextureBuffer : IDisposable
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~TextureBuffer() => Dispose(disposing: false);
 
     /// <summary>

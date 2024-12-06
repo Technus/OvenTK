@@ -77,6 +77,9 @@ public class VertexArray : IDisposable
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~VertexArray() => Dispose(disposing: false);
 
     /// <summary>

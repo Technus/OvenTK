@@ -1,7 +1,7 @@
 ﻿namespace OvenTK.Lib;
-public class Shape(int verticesHandle, int indicesHandle, float[] vertices, int[] indices)
+internal class Shape<TVert,TIndice>(BufferBase verticesHandle, BufferBase indicesHandle, TVert[] vertices, TIndice[] indices)
 {
-    public float[] Vertices => vertices;
+    public TVert[] Vertices => vertices;
 
-    public int[] Indices => indices;
+    public TIndice[] Indices => indices;
 }

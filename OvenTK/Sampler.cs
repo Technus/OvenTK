@@ -2,7 +2,7 @@
 
 namespace OvenTK.Lib;
 
-public class Sampler : IDisposable
+internal class Sampler : IDisposable
 {
     private bool _disposed;
 

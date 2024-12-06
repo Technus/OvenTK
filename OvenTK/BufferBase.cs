@@ -7,6 +7,9 @@ public abstract class BufferBase
 {
     internal const DrawElementsType _drawTypeNone = default;
 
+    /// <summary>
+    /// The storage for <see cref="DrawType"/>
+    /// </summary>
     protected DrawElementsType _drawElementsType = _drawTypeNone;
 
     /// <summary>
@@ -59,6 +62,7 @@ public abstract class BufferBase
     /// Copy one buffer to other with OpenGL
     /// </summary>
     /// <param name="other"></param>
+    /// <param name="count">in bytes</param>
     /// <param name="readOffset">in bytes</param>
     /// <param name="writeOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
@@ -339,7 +343,13 @@ public abstract class BufferBase
     /// <param name="p"></param>
     public readonly struct Mapping<T>(BufferBase buffer, nint p) : IDisposable where T : struct
     {
+        /// <summary>
+        /// Pointer to data
+        /// </summary>
         public nint Pointer => p;
+        /// <summary>
+        /// The parent buffer
+        /// </summary>
         public BufferBase Buffer => buffer;
 
         /// <summary>
@@ -353,14 +363,38 @@ public abstract class BufferBase
         /// <remarks>It adds offset... of 0...</remarks>
         public void FlushRelative(nint offset = default, int length = default)
             => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Buffer.Size - offset : length);
+        /// <summary>
+        /// Unmaps the mapping
+        /// </summary>
         public void Dispose() => GL.UnmapNamedBuffer(Buffer.Handle);
 
+        /// <summary>
+        /// Helper to get range mapping of this mapping
+        /// </summary>
         public RangeMapping<T> RangeMap => new(Buffer, Pointer, default, Buffer.Size);
+        /// <summary>
+        /// Helper to get span of this mapping
+        /// </summary>
         public Span<T> Span => Pointer.AsSpan<T>(Buffer.Size);
+        /// <summary>
+        /// Helper to get read only span of this mapping
+        /// </summary>
         public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Buffer.Size);
 
+        /// <summary>
+        /// Cast to Range mapping using whole range
+        /// </summary>
+        /// <param name="map"></param>
         public static implicit operator RangeMapping<T>(Mapping<T> map) => new(map.Buffer, map.Pointer, default, map.Buffer.Size);
+        /// <summary>
+        /// Cast to span using whole range
+        /// </summary>
+        /// <param name="map"></param>
         public static implicit operator Span<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        /// <summary>
+        /// Cast to read only span using whole range
+        /// </summary>
+        /// <param name="map"></param>
         public static implicit operator ReadOnlySpan<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
     }
 
@@ -374,9 +408,21 @@ public abstract class BufferBase
     /// <param name="size"></param>
     public readonly struct RangeMapping<T>(BufferBase buffer, nint p, nint offset, int size) : IDisposable where T : struct
     {
+        /// <summary>
+        /// Pointer to data
+        /// </summary>
         public nint Pointer => p;
+        /// <summary>
+        /// Offset from <see cref="Buffer"/> start
+        /// </summary>
         public nint Offset => offset;
+        /// <summary>
+        /// Size in bytes
+        /// </summary>
         public int Size => size;
+        /// <summary>
+        /// The parent buffer
+        /// </summary>
         public BufferBase Buffer => buffer;
 
         /// <summary>
@@ -390,12 +436,29 @@ public abstract class BufferBase
         /// <remarks>It adds <see cref="Offset"/></remarks>
         public void FlushRelative(nint offset = default, int length = default)
             => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset + Offset, length is 0 ? Size - offset : length);
+        /// <summary>
+        /// Unmaps the mapping
+        /// </summary>
         public void Dispose() => GL.UnmapNamedBuffer(Buffer.Handle);
 
+        /// <summary>
+        /// Helper to get span of this mapping
+        /// </summary>
         public Span<T> Span => Pointer.AsSpan<T>(Size);
+        /// <summary>
+        /// Helper to get read only span of this mapping
+        /// </summary>
         public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Size);
 
+        /// <summary>
+        /// Cast to span using this range
+        /// </summary>
+        /// <param name="map"></param>
         public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        /// <summary>
+        /// Cast to read only span using this range
+        /// </summary>
+        /// <param name="map"></param>
         public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
     }
 

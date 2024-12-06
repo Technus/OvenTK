@@ -1,5 +1,6 @@
 ﻿using Mapper;
 using StbImageSharp;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace OvenTK.Lib;
@@ -32,12 +33,29 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         _sprites = sprites;
     }
 
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enum descriptions<br/>
+    /// Using <paramref name="textureResolver"/> to map enum <see cref="DescriptionAttribute"/> to image streams
+    /// </summary>
+    /// <param name="textureResolver"></param>
+    /// <param name="mapper"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
     public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
     {
         var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
         return CreateFrom(values.Select(textureResolver.Invoke), mapper, maxMipLevels);
     }
 
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enumeration of streams<br/>
+    /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// </summary>
+    /// <param name="images"></param>
+    /// <param name="mapper"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public static SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
     {
         var imageList = new List<Pow2RectImage>();
@@ -45,7 +63,7 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
 
         foreach (var image in images)
         {
-            var pow2RectImage = new Pow2RectImage(image.LoadImage());
+            var pow2RectImage = new Pow2RectImage(image.LoadImageAndDispose());
             minSize = Math.Min(minSize, Math.Min(pow2RectImage.Width, pow2RectImage.Height));
             imageList.Add(pow2RectImage);
         }
@@ -73,6 +91,12 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         return new(spriteSheet, buffer, texBuffer, data);
     }
 
+    /// <summary>
+    /// Binds/Loads The sprite texture atlase and sprite data texture buffer on the <paramref name="textureUnit"/> and next ones
+    /// </summary>
+    /// <param name="textureUnit"></param>
+    /// <returns>the next "free" texture unit (<paramref name="textureUnit"/>+2)</returns>
+    /// <remarks>Loading order is Texture and then Sprite Data</remarks>
     public int UseBase(int textureUnit)
     {
         _texture.Use(textureUnit++);
@@ -103,10 +127,23 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <returns></returns>
     public static Sprite[] MakeArray(BufferData data) => new Sprite[data.Size / Unsafe.SizeOf<Sprite>()];
 
+    /// <summary>
+    /// Gets the Texture atlas resolution (not normalized)
+    /// </summary>
+    /// <returns></returns>
     public Vector2 GetResolution() => new(_texture.Width, _texture.Height);
 
+    /// <summary>
+    /// Gets the sprite metadata for reference
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public SpriteTex GetSprite(int id) => _sprites[id];
-
+    /// <summary>
+    /// Gets the sprite metadata for reference
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public SpriteTex GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
 
     private sealed class Pow2RectImage : IImageInfo
@@ -125,6 +162,9 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         public int Height { get; }
     }
 
+    /// <summary>
+    /// Used internally to create rectangle mapping
+    /// </summary>
     public class Mapping : ISprite
     {
         private readonly List<IMappedImageInfo> _mappedImages = [];
@@ -171,6 +211,9 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         }
     }
 
+    /// <summary>
+    /// Defines sprite position, angle and <see cref="SpriteTex"/> Id in the sprite data buffer
+    /// </summary>
     [DebuggerDisplay("{X} {Y} {Angle} {Id}")]
     public struct Sprite
     {
@@ -187,13 +230,13 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         /// </summary>
         public float Angle { get; set; }
         /// <summary>
-        /// gpu char to render
+        /// gpu sprite to render
         /// </summary>
         public float Id { get; set; }
     }
 
     /// <summary>
-    /// Defines texturespace of a glyph
+    /// Defines texturespace of a sprite
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
@@ -222,13 +265,17 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         public short H { get; } = h;
     }
 
+    /// <summary>
+    /// Dispose pattern, deletes the textures and buffers
+    /// </summary>
+    /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposedValue)
         {
             if (disposing)
             {
-                // TODO: dispose managed state (managed objects)
+                // dispose managed state (managed objects)
             }
 
             _texBuffer.Dispose();
@@ -238,8 +285,14 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~SpriteSheet() => Dispose(disposing: false);
 
+    /// <summary>
+    /// Dispose pattern, deletes the textures and buffers
+    /// </summary>
     public void Dispose()
     {
         Dispose(disposing: true);

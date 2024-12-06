@@ -40,13 +40,6 @@ public readonly struct Sync : IDisposable
         return new(handle);
     }
 
-    [Obsolete("Is not implemented in OpenGL")]
-    public int IsSignaled()
-    {
-        GL.GetSync(Handle, SyncParameterName.SyncStatus, 1, out var _, out var status);
-        return status;
-    }
-
     /// <summary>
     /// Await sync for <paramref name="timeout"/>
     /// </summary>

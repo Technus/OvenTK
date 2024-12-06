@@ -255,6 +255,7 @@ public class BufferData : BufferBase, IDisposable
     /// </summary>
     /// <param name="sizes">in bytes</param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static unsafe BufferData[] Create(IReadOnlyList<int> sizes, BufferUsageHint hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -274,6 +275,7 @@ public class BufferData : BufferBase, IDisposable
     /// </summary>
     /// <param name="sizes">in bytes</param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static IEnumerable<BufferData> Create(IEnumerable<int> sizes, BufferUsageHint hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -286,6 +288,7 @@ public class BufferData : BufferBase, IDisposable
     /// </summary>
     /// <param name="size">in bytes</param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static BufferData Create(int size = default, BufferUsageHint hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -458,6 +461,9 @@ public class BufferData : BufferBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~BufferData() => Dispose(disposing: false);
 
     /// <summary>

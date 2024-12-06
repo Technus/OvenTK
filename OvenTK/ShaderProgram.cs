@@ -202,43 +202,6 @@ public class ShaderProgram : IDisposable
     //     3. Use the appropriate GL.Uniform* function to set the uniform.
 
     /// <summary>
-    /// Set a uniform int on this shader.
-    /// </summary>
-    /// <param name="name">The name of the uniform</param>
-    /// <param name="data">The data to set</param>
-    [Obsolete("Use dedicated Uniform structs and operate on them")]
-    public void SetInt(string name, int data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
-
-    /// <summary>
-    /// Set a uniform float on this shader.
-    /// </summary>
-    /// <param name="name">The name of the uniform</param>
-    /// <param name="data">The data to set</param>
-    [Obsolete("Use dedicated Uniform structs and operate on them")]
-    public void SetFloat(string name, float data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
-
-    /// <summary>
-    /// Set a uniform Matrix4 on this shader
-    /// </summary>
-    /// <param name="name">The name of the uniform</param>
-    /// <param name="data">The data to set</param>
-    /// <remarks>
-    ///   <para>
-    ///   The matrix is transposed before being sent to the shader.
-    ///   </para>
-    /// </remarks>
-    [Obsolete("Use dedicated Uniform structs and operate on them")]
-    public void SetMatrix4(string name, Matrix4 data) => GL.ProgramUniformMatrix4(Handle, UniformLocations[name].location, true, ref data);
-
-    /// <summary>
-    /// Set a uniform Vector3 on this shader.
-    /// </summary>
-    /// <param name="name">The name of the uniform</param>
-    /// <param name="data">The data to set</param>
-    [Obsolete("Use dedicated Uniform structs and operate on them")]
-    public void SetVector3(string name, Vector3 data) => GL.ProgramUniform3(Handle, UniformLocations[name].location, data);
-
-    /// <summary>
     /// Disposes using dispose pattern, deletes the program
     /// </summary>
     /// <param name="disposing"></param>
@@ -251,8 +214,6 @@ public class ShaderProgram : IDisposable
                 //Nothing
             }
 
-            //if (GL.GetInteger(GetPName.CurrentProgram) == Handle)
-            //    GL.UseProgram(default);
             try
             {
                 GL.DeleteProgram(Handle);
@@ -272,6 +233,9 @@ public class ShaderProgram : IDisposable
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~ShaderProgram() => Dispose(disposing: false);
 
     /// <summary>

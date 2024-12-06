@@ -4,6 +4,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<!-- S2368 - multidimensional/jagged arrays in public API -->
 		<NoWarn>$(NoWarn);S2368;CS8500;</NoWarn>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<Choose>

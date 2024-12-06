@@ -2,6 +2,9 @@
 
 namespace OvenTK.Lib;
 
+/// <summary>
+/// OpenGL storage buffer (of fixed size and no reallocation suppport) for const (size) data or something similar
+/// </summary>
 [DebuggerDisplay("{Handle}:{Size}:{Flags}")]
 public class BufferStorage : BufferBase, IDisposable
 {
@@ -34,6 +37,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// </summary>
     /// <param name="sizes">in bytes</param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static unsafe BufferStorage[] Create(IReadOnlyList<int> sizes, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -53,6 +57,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// </summary>
     /// <param name="sizes">in bytes</param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static IEnumerable<BufferStorage> Create(IEnumerable<int> sizes, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -65,6 +70,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// </summary>
     /// <param name="size"></param>
     /// <param name="hint"></param>
+    /// <param name="drawType"></param>
     /// <returns></returns>
     public static BufferStorage Create(int size, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
@@ -237,6 +243,9 @@ public class BufferStorage : BufferBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~BufferStorage() => Dispose(disposing: false);
 
     /// <summary>

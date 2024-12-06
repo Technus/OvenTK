@@ -17,6 +17,7 @@ public static partial class Extensions
     /// <exception cref="InvalidOperationException"></exception>
     public static void EnableDebug(bool throwErrors = true)
     {
+#pragma warning disable S1172
         static unsafe void OnDebugMessage(
             DebugSource source,     // Source of the debugging message.
             DebugType type,         // Type of the debugging message.
@@ -43,33 +44,108 @@ public static partial class Extensions
             if (type is DebugType.DebugTypeError)
                 throw new InvalidOperationException(str);
         }
+#pragma warning restore S1172
 
         GL.Enable(EnableCap.DebugOutput);
         GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
     }
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this BufferBase.Mapping<T> arr) where T : struct => arr.Buffer.Size;
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this BufferBase.RangeMapping<T> arr) where T : struct => arr.Buffer.Size;
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this ReadOnlySpan<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this Span<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this ReadOnlyMemory<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this Memory<T> arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T[,,] arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T[,] arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T[] arr) => arr.Length * Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Get the byte size of <typeparamref name="T"/> (<paramref name="_"/>)
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="_"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T _) where T : struct => Unsafe.SizeOf<T>();
 
+    /// <summary>
+    /// Unsafe helper to wrap <see langword="nint"/> pointer to data of size <paramref name="bytes"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="p"></param>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
     public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
 
+    /// <summary>
+    /// Unsafe helper to wrap <see langword="nint"/> pointer to data of size <paramref name="bytes"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="p"></param>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
     public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
 
     /// <summary>
@@ -127,7 +203,7 @@ public static partial class Extensions
     /// <param name="image">stream to read and dispose</param>
     /// <param name="flipY">should flip vertically</param>
     /// <returns></returns>
-    public static ImageResult LoadImage(this Stream image, bool flipY = true)
+    public static ImageResult LoadImageAndDispose(this Stream image, bool flipY = true)
     {
         using var stream = image;
         // OpenGL has it's texture origin in the lower left corner instead of the top left corner,
@@ -153,6 +229,13 @@ public static partial class Extensions
         return description;
     }
 
+    /// <summary>
+    /// Gets random <typeparamref name="TEnum"/> with option to set probability for <see langword="default"/>
+    /// </summary>
+    /// <typeparam name="TEnum"></typeparam>
+    /// <param name="random">generator to use</param>
+    /// <param name="zeroChance"><see langword="default"/> chance</param>
+    /// <returns></returns>
     public static TEnum GetRandom<TEnum>(this Random random, float zeroChance = -1) where TEnum : struct, Enum
     {
         var count = EnumStorage<TEnum>.EnumValuesWithoutDefault.Count;

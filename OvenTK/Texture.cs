@@ -74,6 +74,7 @@ public class Texture : IDisposable, IImageInfo
     /// </summary>
     /// <param name="image"></param>
     /// <param name="mipLevels"></param>
+    /// <param name="flipY">should it flip y for OpenGL, true by default</param>
     /// <returns></returns>
     public static Texture CreateFrom(Stream image, int mipLevels = _mipDefault, bool flipY = true)
     {
@@ -81,11 +82,7 @@ public class Texture : IDisposable, IImageInfo
         GL.CreateTextures(TextureTarget.Texture2D, 1, out int handle);
         GL.TextureParameter(handle, TextureParameterName.TextureMaxLevel, mipLevels);
 
-        // Bind the handle
-        //GL.ActiveTexture(TextureUnit.Texture0 + textureUnit);
-        //GL.BindTexture(TextureTarget.Texture2D, handle);
-
-        var imageResult = image.LoadImage(flipY);
+        var imageResult = image.LoadImageAndDispose(flipY);
 
         // Now that our pixels are prepared, it's time to generate a texture. We do this with GL.TexImage2D.
         // Arguments:
@@ -98,7 +95,6 @@ public class Texture : IDisposable, IImageInfo
         //   The format of the pixels, explained above. Since we loaded the pixels as RGBA earlier, we need to use PixelFormat.Rgba.
         //   Data type of the pixels.
         //   And finally, the actual pixels.
-        //GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
         GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, imageResult.Width, imageResult.Height);
         GL.TextureSubImage2D(handle, 0, 0, 0, imageResult.Width, imageResult.Height, PixelFormat.Rgba, PixelType.UnsignedByte, imageResult.Data);
 
@@ -181,6 +177,9 @@ public class Texture : IDisposable, IImageInfo
         }
     }
 
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
     ~Texture() => Dispose(disposing: false);
 
     /// <summary>

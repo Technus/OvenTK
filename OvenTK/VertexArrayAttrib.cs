@@ -7,10 +7,9 @@ namespace OvenTK.Lib;
 [DebuggerDisplay("{Index}")]
 public class VertexArrayAttrib
 {
-    protected const VertexAttribType _attribTypeNone = default;
+    internal const VertexAttribType _attribTypeNone = default;
 
     private const int _maxSize = 4;
-    private bool _disposed;
 
     /// <summary>
     /// The assigned index of this parameter
@@ -98,9 +97,6 @@ public class VertexArrayAttrib
 
     internal void Assign(VertexArray vertexArray, int index)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(VertexArrayAttrib));
-
         if (Index != default)
             throw new InvalidOperationException("Already set");
 

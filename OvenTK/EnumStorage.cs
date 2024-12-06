@@ -1,12 +1,29 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
+#pragma warning disable S2743
 
 namespace OvenTK.Lib;
+/// <summary>
+/// Persistent storage for enum metadata, to speedup access
+/// </summary>
+/// <typeparam name="TEnum"></typeparam>
 public static class EnumStorage<TEnum> where TEnum : struct, Enum
 {
+    /// <summary>
+    /// The <see langword="typeof"/> of <typeparamref name="TEnum"/>
+    /// </summary>
     public static Type Type { get; }
+    /// <summary>
+    /// Helper dictionary to get <see cref="DescriptionAttribute"/> from enum
+    /// </summary>
     public static IReadOnlyDictionary<TEnum, string?> Descriptions { get; }
+    /// <summary>
+    /// All defined enum values
+    /// </summary>
     public static IReadOnlyList<TEnum> EnumValues { get; }
+    /// <summary>
+    /// All defined enum values except <see langword="default"/>
+    /// </summary>
     public static IReadOnlyList<TEnum> EnumValuesWithoutDefault { get; }
 
     static EnumStorage()
