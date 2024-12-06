@@ -10,7 +10,19 @@ namespace OvenTK.Lib;
 [DebuggerDisplay("{Handle}:{Width}/{Height}")]
 public class Texture : TextureBase, IDisposable, IImageInfo
 {
-    internal const int _mipDefault = 4;
+    /// <summary>
+    /// The if level count is set to 0 then the texture has no data
+    /// </summary>
+    public const int MaxLevel_NoData = 0;
+    /// <summary>
+    /// The if level count is set to 1 then there is no mipping
+    /// </summary>
+    public const int MaxLevel_NoMip = 1;
+    /// <summary>
+    /// Default level of mipping used in this lib
+    /// </summary>
+    public const int MaxLevel_MipDefault = 4;
+
     private bool _disposed;
 
     /// <summary>
@@ -56,15 +68,16 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// </summary>
     /// <param name="width"></param>
     /// <param name="height"></param>
+    /// <param name="format"></param>
     /// <param name="target"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture Create(int width, int height, TextureTarget target = TextureTarget.Texture2D, int mipLevels = _mipDefault)
+    public static Texture Create(int width, int height, SizedInternalFormat format = SizedInternalFormat.Rgba8, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault)
     {
         GL.CreateTextures(target, 1, out int handle);
         GL.TextureParameter(handle, TextureParameterName.TextureMaxLevel, mipLevels);
 
-        GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, width, height);
+        GL.TextureStorage2D(handle, mipLevels, format, width, height);
 
         GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
         GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
@@ -81,7 +94,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <param name="target"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture CreateFrom(byte[] bytes, TextureTarget target = TextureTarget.Texture2D, int mipLevels = _mipDefault)
+    public static Texture CreateFrom(byte[] bytes, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault)
     {
         using var stream = new MemoryStream(bytes);
         return CreateFrom(stream, target, mipLevels);
@@ -94,7 +107,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <param name="target"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture CreateFrom(string filePath, TextureTarget target = TextureTarget.Texture2D, int mipLevels = _mipDefault)
+    public static Texture CreateFrom(string filePath, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault)
     {
         using var stream = File.OpenRead(filePath);
         return CreateFrom(stream, target, mipLevels);
@@ -108,7 +121,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <param name="mipLevels"></param>
     /// <param name="flipY">should it flip y for OpenGL, true by default</param>
     /// <returns></returns>
-    public static Texture CreateFrom(Stream image, TextureTarget target = TextureTarget.Texture2D, int mipLevels = _mipDefault, bool flipY = true)
+    public static Texture CreateFrom(Stream image, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault, bool flipY = true)
     {
         // Generate handle
         GL.CreateTextures(target, 1, out int handle);
@@ -138,7 +151,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <param name="target"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture CreateFrom(IEnumerable<(int x, int y, ImageResult texture)> textures, int width, int height, TextureTarget target = TextureTarget.Texture2D, int mipLevels = _mipDefault)
+    public static Texture CreateFrom(IEnumerable<(int x, int y, ImageResult texture)> textures, int width, int height, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault)
     {
         GL.CreateTextures(target, 1, out int handle);
         GL.TextureParameter(handle, TextureParameterName.TextureMaxLevel, mipLevels);

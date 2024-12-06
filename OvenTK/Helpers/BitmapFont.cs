@@ -91,7 +91,7 @@ public class BitmapFont : IDisposable
     /// <param name="mipLevels">texture mip levels</param>
     /// <returns>Bitmap font from <paramref name="fontDefinition"/></returns>
     /// <exception cref="InvalidOperationException">When font couldn't be deserialized correctly</exception>
-    public static BitmapFont CreateFrom(Stream fontDefinition, Func<string, Stream> textureResolver, int mipLevels = Texture._mipDefault)
+    public static BitmapFont CreateFrom(Stream fontDefinition, Func<string, Stream> textureResolver, int mipLevels = Texture.MaxLevel_MipDefault)
     {
         //Load texture definition
         using var stream = fontDefinition;

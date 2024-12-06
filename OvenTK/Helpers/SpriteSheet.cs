@@ -68,7 +68,7 @@ public class SpriteSheet : IDisposable
     /// <param name="maxMipLevels"></param>
     /// <returns>The sprite sheet with 0 being an empty placeholder and images from list taking next places in the <see cref="RectImage.Id"/> order starting from 1</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static SpriteSheet CreateFrom(List<RectImage> imageList, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static SpriteSheet CreateFrom(List<RectImage> imageList, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture.MaxLevel_MipDefault)
     {
         var minSize = int.MaxValue;
 
@@ -77,7 +77,7 @@ public class SpriteSheet : IDisposable
             minSize = Math.Min(minSize, Math.Min(image.Width, image.Height));
         }
 
-        var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
+        var mipLevels = Math.Min(maxMipLevels, 1+(int)(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
 
         var data = new SpriteTex[imageList.Count + 1];//for null
 
@@ -109,7 +109,7 @@ public class SpriteSheet : IDisposable
     /// <param name="maxMipLevels"></param>
     /// <returns>The sprite sheet with 0 being an empty placeholder and images from list taking next places starting from 1</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static SpriteSheet CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static SpriteSheet CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture.MaxLevel_MipDefault)
     {
         var imageList = new List<RectImage>();
 
@@ -429,7 +429,7 @@ public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvert
     /// <param name="mapper"></param>
     /// <param name="maxMipLevels"></param>
     /// <returns></returns>
-    public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture.MaxLevel_MipDefault)
     {
         var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
         return CreateFrom(values.Select(textureResolver.Invoke), mapper, maxMipLevels);
@@ -444,7 +444,7 @@ public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvert
     /// <param name="maxMipLevels"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture.MaxLevel_MipDefault)
     {
         using var sheet = SpriteSheet.CreateFrom(images, mapper, maxMipLevels);
         sheet._disposedValue = true;//To prevent GC of resources passed to clone

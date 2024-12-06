@@ -90,7 +90,6 @@ public class MainViewModel : DependencyObject
     private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2, _pCompute;
     private FrameBuffer _fbLines;
     private int _fbMain;
-    private RenderBuffer _rbLines;
     private bool _invalidated = true;
     private Uniform _uniform = new()
     {
@@ -428,12 +427,11 @@ public class MainViewModel : DependencyObject
         _bColorBezier = TextureBuffer.CreateFrom(_dColorBezier, SizedInternalFormat.Rgba8ui);
         _bColorBezier.Use(textureCount++);
 
-        _tLines = Texture.Create(1, 1, TextureTarget.Texture2D, 1);
+        _tLines = Texture.Create(1, 1, SizedInternalFormat.Rgba8, TextureTarget.Texture2D, Texture.MaxLevel_NoMip);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
 
         //Output buffers for layers
-        _rbLines = RenderBuffer.Create(1, 1, RenderbufferStorage.Rgb8ui);
         _fbLines = FrameBuffer.Create([
             FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
         ]);
@@ -700,17 +698,17 @@ public class MainViewModel : DependencyObject
 
     internal void OnResize(object sender, SizeChangedEventArgs e)
     {
+        var x = Math.Max(1,(int)e.NewSize.Width);
+        var y = Math.Max(1,(int)e.NewSize.Height);
         _uniform.Resolution = new()
         {
-            X = (float)e.NewSize.Width,
-            Y = (float)e.NewSize.Height,
+            X = x,
+            Y = y,
         };
         Dispatcher.Invoke(() =>
         {
-            Interlocked.Exchange(ref _tLines, Texture.Create((int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, TextureTarget.Texture2D, 1)).Dispose();
-            //Interlocked.Exchange(ref _rbLines, RenderBuffer.Create((int)_uniform.Resolution.X, (int)_uniform.Resolution.Y, RenderbufferStorage.Rgba8ui)).Dispose();
+            Interlocked.Exchange(ref _tLines, Texture.Create(x, y, SizedInternalFormat.Rgba8, TextureTarget.Texture2D, Texture.MaxLevel_NoMip)).Dispose();
             Interlocked.Exchange(ref _fbLines, FrameBuffer.Create([
-                //FrameBufferAtt.CreateFrom(_rbLines, FramebufferAttachment.ColorAttachment0),
                 FrameBufferAtt.CreateFrom(_tLines, FramebufferAttachment.ColorAttachment0),
             ])).Dispose();
             if (_fbLines.CheckStatus() is not FramebufferStatus.FramebufferComplete)
