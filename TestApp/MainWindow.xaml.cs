@@ -41,16 +41,14 @@ public partial class MainWindow : Window
         0,1,2,
         0,2,3,
     ];
-    private const int _count = 1000;
-    private readonly Matrix4[] _positions = new Matrix4[_count * 2];
+    private const int _count = 10000;
+    private readonly Vector4[] _positions = new Vector4[_count];
     private readonly uint[] _values = new uint[_count];
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
     {
-        public float egg = egg;
-        public float nog = nog;
-        public float eggNog = eggNog;
+        public Vector3 color = new(egg, nog, eggNog);
         public Matrix4 projection = Matrix4.Identity;
         public Matrix4 view = Matrix4.Identity;
     }
@@ -65,7 +63,7 @@ public partial class MainWindow : Window
         var rand = new Random();
         for (int i = 0; i < _positions.Length; i++)
         {
-            _positions[i] = Matrix4.CreateTranslation((float)rand.NextDouble(), (float)rand.NextDouble(), 0);
+            _positions[i] = new Vector4((float)(rand.NextDouble() - 0.5) * 2, (float)(rand.NextDouble() - 0.5) * 2, 0f, 1f);
         }
         for (int i = 0; i < _values.Length; i++)
         {
@@ -86,9 +84,9 @@ public partial class MainWindow : Window
         ];
 
         _vao = VertexArray.Create(_buffers[1], [
-                VertexArrayAttrib.Create(_buffers[0], 2, VertexAttribType.Float, sizeof(float)*2, false),
-                VertexArrayAttrib.Create(_buffers[2], 16, VertexAttribType.Float, sizeof(float)*2, false),
-                VertexArrayAttrib.Create(_buffers[4], 1, VertexAttribType.UnsignedInt, sizeof(uint), false, 1),
+            VertexArrayAttrib.Create(_buffers[0], 2, VertexAttribType.Float, sizeof(float)*2, false),
+            VertexArrayAttrib.Create(_buffers[2], 4, VertexAttribType.Float, sizeof(float)*4, false, 1),
+            VertexArrayAttrib.Create(_buffers[4], 1, VertexAttribType.UnsignedInt, sizeof(uint), false, 1),
         ]);
 
         _texture = Texture.CreateFrom(Properties.Resources.tower1);
@@ -101,11 +99,11 @@ public partial class MainWindow : Window
       #version 460 compatibility
       //Each group (in,out, uniform, uniform sampler2d, etc.) has own location layout
 
-      layout (location = 0) in vec2 aVertice;
-      layout (location = 1) in mat4 aInstancePosition;
+      layout (location = 0) in vec2 aVertice; //Attribs
+      layout (location = 1) in vec4 aInstancePosition;
       layout (location = 2) in uint aData;
 
-      layout (location = 0) out vec2 texPos;
+      layout (location = 0) out vec2 texPos;//to next shader
 
       layout (binding = 0) uniform Uniform {
           vec3 eggNog;
@@ -116,20 +114,19 @@ public partial class MainWindow : Window
       void main()
       {
           //the gl_Position (clip-space output position) here must fall between [-1,1],[-1,1],[-1,1],[for normalization, usually: 1]
-          //gl_Position = vec4(aVertice, 0, 1.0);
-          //gl_Position.x /= 25;
-          //gl_Position.y /= 25;
-          //gl_Position.x += aInstancePosition.x;
-          //gl_Position.y += aInstancePosition.y;
-          gl_Position = projection * view * aInstancePosition * vec4(aVertice, 0, 1.0);
+          gl_Position = vec4(aVertice, 0, 1.0);
+          gl_Position.x /= 25f;
+          gl_Position.y /= 25f;
+          gl_Position.x += aInstancePosition.x;
+          gl_Position.y += aInstancePosition.y;
+          //gl_Position = projection * view * vec4(aVertice.x/25f + aInstancePosition.x, aVertice.y/25f + aInstancePosition.y, 0, 1.0);
           texPos.xy = gl_Position.xy;
       }
       """,
           $$"""
       #version 460 compatibility
-      out vec4 FragColor;
       
-      layout(location = 0) in vec2 texPos;
+      layout(location = 0) in vec2 texPos;//from shader
 
       layout (binding = 0) uniform Uniform {
           vec3 eggNog;
@@ -138,13 +135,13 @@ public partial class MainWindow : Window
       };
 
       //samplers sample in range: [0,1],[0,1]
-      layout(binding = 0) uniform sampler2D diffuseTex;
+      layout(binding = 0) uniform sampler2D diffuseTex;//binds to texture unit
 
       void main()
       {
           vec4 colorzz = texture(diffuseTex, (texPos + 0.5) / 1.0);
-          //FragColor = colorzz;
-          FragColor = vec4(eggNog.rgb, 1.0);
+          gl_FragColor = colorzz;
+          //gl_FragColor = vec4(eggNog.rgb, 1.0);
       }
       """);
     }
@@ -155,8 +152,8 @@ public partial class MainWindow : Window
 
         _shader.Use();
 
-        GL.BindVertexArray(_vao);
+        _vao.Use();
 
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _positions.Length / 2);
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _positions.Length);
     }
 }

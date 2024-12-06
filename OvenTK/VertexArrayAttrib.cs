@@ -39,7 +39,7 @@ public class VertexArrayAttrib : IDisposable
         return new(buffer, size, type, stride, normalized, divisor);
     }
 
-    internal void Assign(VertexArray vertexArray, int i)
+    internal void Assign(VertexArray vertexArray, int index)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(VertexArrayAttrib));
@@ -47,7 +47,7 @@ public class VertexArrayAttrib : IDisposable
         if (Index != default)
             throw new InvalidOperationException("Already set");
 
-        Index = i;
+        Index = index;
         GL.EnableVertexArrayAttrib(vertexArray, Index);
         GL.VertexArrayAttribFormat(vertexArray, Index, Size, Type, Normalized, 0);
         GL.VertexArrayAttribBinding(vertexArray, Index, Index);
