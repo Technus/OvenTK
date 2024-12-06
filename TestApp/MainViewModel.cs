@@ -25,7 +25,7 @@ public class MainViewModel : DependencyObject
     ];
     private const int _count = 12_000_000;
     private const int _cpus = 4;
-    private readonly TripleBuffer<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
+    private readonly TripleBufferSimple<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
@@ -71,35 +71,38 @@ public class MainViewModel : DependencyObject
 
     public async Task DataWriteMapped(int cpus = _cpus, CancellationToken token = default)
     {
+        if (_count % cpus is not 0)
+            throw new InvalidOperationException();
+
         while (!token.IsCancellationRequested)
         {
             var sw = Stopwatch.GetTimestamp();
 
-            if (_count % cpus is not 0)
-                throw new InvalidOperationException();
-
-            _tpsCounter.PushFrame();
-            await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.FPS);
-
-            using var w = _triple.Write();
-            var b = w.Buffer;
-            var (b0, b1) = (b[0], b[1]);
-
-            var batch = _count / cpus;
-
-            var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
+            //if (_triple.IsStale)
             {
-                var random = new Random();
-                var start = i * batch;
-                var end = start + batch;
-                for (int j = start; j < end; j++)
-                {
-                    b0[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
-                    b1[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
-                }
-            }));
+                _tpsCounter.PushFrame();
+                await Dispatcher.BeginInvoke(() => TPS = _tpsCounter.FPS);
 
-            await Task.WhenAll(tasks);
+                using var w = _triple.Write();
+                var b = w.Buffer;
+                var (b0, b1) = (b[0], b[1]);
+
+                var batch = _count / cpus;
+                var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
+                {
+                    var random = new Random();
+                    var start = i * batch;
+                    var end = start + batch;
+                    for (int j = start; j < end; j++)
+                    {
+                        b0[j] = new Vector4((float)(random.NextDouble() - 0.5) * 2, (float)(random.NextDouble() - 0.5) * 2, 0f, 1f);
+                        b1[j] = new Vector4((float)random.NextDouble() / 4, (float)random.NextDouble() / 2, (float)random.NextDouble(), (float)random.NextDouble());
+                    }
+                }));
+
+                await Task.WhenAll(tasks);
+            }
+            //else await Task.Delay(10);
 
             var td = FpsCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
@@ -120,11 +123,14 @@ public class MainViewModel : DependencyObject
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         //using var sync = Sync.Create();
-        using var r = _triple.Read();
-        var b = r.Value;
 
-        (_buffers[2] as BufferData)!.Recreate(b[0]);
-        (_buffers[4] as BufferData)!.Recreate(b[1]);
+        if (!_triple.IsStale)
+        {
+            using var r = _triple.Read();
+            var b = r.Value;
+            (_buffers[2] as BufferData)!.Recreate(b[0]);
+            (_buffers[4] as BufferData)!.Recreate(b[1]);
+        }
 
         /*
         using (var map = _buffers[2].MapPage<Vector4>(r.Id, 3, BufferAccessMask.MapWriteBit | BufferAccessMask.MapUnsynchronizedBit | BufferAccessMask.MapInvalidateRangeBit))
