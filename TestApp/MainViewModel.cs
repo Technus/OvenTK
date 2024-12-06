@@ -603,8 +603,6 @@ public class MainViewModel : DependencyObject
         _vPolyline2.Use();
         GL.DrawArrays(PrimitiveType.Lines, 0, _beziers * 2 * 2);//*2 cause 2 points , *2 cause the source buffer is lineadjencies so 2x longer
 
-        return;
-
         GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
 

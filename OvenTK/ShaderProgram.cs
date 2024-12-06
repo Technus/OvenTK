@@ -26,7 +26,7 @@ public class ShaderProgram : IDisposable
     /// <returns></returns>
     public ShaderProgram WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Program, Handle, -1, label);

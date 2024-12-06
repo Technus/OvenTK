@@ -28,7 +28,7 @@ public readonly struct Shader(int handle) : IDisposable
     /// <returns></returns>
     public Shader WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Shader, Handle, -1, label);

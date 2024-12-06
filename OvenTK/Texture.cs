@@ -43,7 +43,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <returns></returns>
     public Texture WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);

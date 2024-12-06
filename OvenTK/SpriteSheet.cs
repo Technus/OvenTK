@@ -10,6 +10,8 @@ namespace OvenTK.Lib;
 /// </summary>
 public class SpriteSheet : IDisposable
 {
+    internal static readonly double _log2 = Math.Log(2);
+
     internal readonly Texture _texture;
     internal readonly BufferStorage _buffer;
     internal readonly TextureBuffer _texBuffer;
@@ -38,7 +40,7 @@ public class SpriteSheet : IDisposable
     /// <returns></returns>
     public SpriteSheet WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texture.Handle, -1, $"{label}:Texture");
@@ -68,7 +70,7 @@ public class SpriteSheet : IDisposable
             imageList.Add(pow2RectImage);
         }
 
-        var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / Extensions._log2));//this ensures no color bleed and max mipping
+        var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
 
         var data = new SpriteTex[imageList.Count + 1];//for null
         var i = 1;
@@ -145,8 +147,8 @@ public class SpriteSheet : IDisposable
         public Pow2RectImage(ImageResult texture)
         {
             ImageResult = texture;
-            Width = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Width) / Extensions._log2));
-            Height = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Height) / Extensions._log2));
+            Width = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Width) / _log2));
+            Height = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Height) / _log2));
         }
 
         public ImageResult ImageResult { get; }

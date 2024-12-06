@@ -39,7 +39,7 @@ public class BufferData : BufferBase, IDisposable
     /// <returns></returns>
     public BufferData WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);

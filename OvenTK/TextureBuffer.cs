@@ -27,7 +27,7 @@ public class TextureBuffer : TextureBase, IDisposable
     /// <returns></returns>
     public TextureBuffer WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);

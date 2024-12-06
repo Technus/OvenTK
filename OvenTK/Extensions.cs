@@ -8,8 +8,10 @@ namespace OvenTK.Lib;
 /// </summary>
 public static partial class Extensions
 {
-    internal static bool _isDebug = false;
-    internal static readonly double _log2 = Math.Log(2);
+    /// <summary>
+    /// is the OpenGL debug enabled or not
+    /// </summary>
+    public static bool InDebug { get; private set; } = false;
 
     /// <summary>
     /// Enables printing to Debug and/or throwing exceptions on OpenGL errors
@@ -49,7 +51,7 @@ public static partial class Extensions
 
         GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
         GL.Enable(EnableCap.DebugOutput);
-        _isDebug = true;
+        InDebug = true;
     }
 
     /// <summary>
@@ -59,7 +61,7 @@ public static partial class Extensions
     {
         GL.DebugMessageCallback(default, default);
         GL.Disable(EnableCap.DebugOutput);
-        _isDebug = false;
+        InDebug = false;
     }
 
     /// <summary>
@@ -71,7 +73,7 @@ public static partial class Extensions
     /// <returns></returns>
     public static DebugGroupScope DebugGroup(int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication, [CallerMemberName] string? caller = default)
     {
-        if (!_isDebug)
+        if (!InDebug)
             return default;
         (caller ?? throw new ArgumentNullException(nameof(caller))).EnsureASCII();
         GL.PushDebugGroup(source, id, -1, caller);
@@ -87,7 +89,7 @@ public static partial class Extensions
     /// <returns></returns>
     public static DebugGroupScope DebugGroup(string message, int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication)
     {
-        if (!_isDebug)
+        if (!InDebug)
             return default;
         message.EnsureASCII();
         GL.PushDebugGroup(source, id, -1, message);
@@ -104,7 +106,7 @@ public static partial class Extensions
         /// </summary>
         public void Dispose()
         {
-            if (!_isDebug)
+            if (!InDebug)
                 return;
             GL.PopDebugGroup();
         }

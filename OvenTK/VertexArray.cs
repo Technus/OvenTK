@@ -36,7 +36,7 @@ public class VertexArray : IDisposable
     /// <returns></returns>
     public VertexArray WithLabel(string label)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.VertexArray, Handle, -1, label);

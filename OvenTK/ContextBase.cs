@@ -6,21 +6,11 @@
 public abstract class ContextBase
 {
     /// <summary>
-    /// On <see cref="Use"/>
-    /// </summary>
-    public Action? Begin { get; set; }
-    /// <summary>
-    /// On <see cref="Scope"/> dispose
-    /// </summary>
-    public Action? Finish { get; set; }
-
-    /// <summary>
     /// Creates drawing scope
     /// </summary>
     /// <returns></returns>
     public virtual Scope Use()
     {
-        Begin?.Invoke();
         return new Scope(this);
     }
 
@@ -29,7 +19,6 @@ public abstract class ContextBase
     /// </summary>
     protected virtual void Done()
     {
-        Finish?.Invoke();
     }
 
     /// <summary>

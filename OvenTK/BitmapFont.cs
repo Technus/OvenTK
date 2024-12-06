@@ -59,7 +59,7 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public BitmapFont WithLabel(string? label = default)
     {
-        if (!Extensions._isDebug)
+        if (!Extensions.InDebug)
             return this;
         label ??= _font.Info!.ToString();
         label.EnsureASCII();
