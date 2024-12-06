@@ -22,6 +22,20 @@ public readonly struct Shader(int handle) : IDisposable
     public static implicit operator int(Shader shader) => shader.Handle;
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public Shader WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Shader, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Dispose by removing from OpenGl, since it is a struct this will not be called on garbage collection?
     /// </summary>
     public void Dispose() => GL.DeleteShader(handle);
@@ -37,7 +51,7 @@ public readonly struct Shader(int handle) : IDisposable
     public static async Task<Shader> CreateFromAsync(ShaderType type, Stream shader, Encoding encoding = default!)
     {
         using var stream = shader;
-        using var streamReader = new StreamReader(stream, encoding ?? Encoding.UTF8);
+        using var streamReader = new StreamReader(stream, encoding ?? Encoding.ASCII);
         return CreateFrom(type, await streamReader.ReadToEndAsync());
     }
 
@@ -52,7 +66,7 @@ public readonly struct Shader(int handle) : IDisposable
     public static Shader CreateFrom(ShaderType type, Stream shader, Encoding encoding = default!)
     {
         using var stream = shader;
-        using var streamReader = new StreamReader(stream, encoding ?? Encoding.UTF8);
+        using var streamReader = new StreamReader(stream, encoding ?? Encoding.ASCII);
         return CreateFrom(type, streamReader.ReadToEnd());
     }
 
@@ -65,7 +79,7 @@ public readonly struct Shader(int handle) : IDisposable
     /// <returns></returns>
     /// <remarks><paramref name="shader"/> will be closed and disposed</remarks>
     public static Shader CreateFrom(ShaderType type, byte[] shader, Encoding encoding = default!)
-        => CreateFrom(type, (encoding ?? Encoding.UTF8).GetString(shader));
+        => CreateFrom(type, (encoding ?? Encoding.ASCII).GetString(shader));
 
     /// <summary>
     /// Create shader of a certain <paramref name="type"/> using the <paramref name="shader"/> stream as source
@@ -78,11 +92,7 @@ public readonly struct Shader(int handle) : IDisposable
     /// <remarks><paramref name="shader"/> will be closed and disposed</remarks>
     public static Shader CreateFrom(ShaderType type, string shader)
     {
-#if DEBUG
-        if (shader.Any(c => c > 128))
-            throw new ArgumentOutOfRangeException(nameof(shader), shader, "Shader Source contains non ASCII characters");
-#endif
-
+        shader.EnsureASCII();
         var handle = GL.CreateShader(type);
         GL.ShaderSource(handle, shader);
 

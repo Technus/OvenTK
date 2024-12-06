@@ -37,6 +37,20 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     }
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public new Texture WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Create texture from <paramref name="bytes"/>
     /// </summary>
     /// <param name="bytes"></param>

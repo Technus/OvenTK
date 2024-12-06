@@ -33,6 +33,20 @@ public class BufferStorage : BufferBase, IDisposable
     }
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public new BufferStorage WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Creates Buffers without data
     /// </summary>
     /// <param name="sizes">in bytes</param>

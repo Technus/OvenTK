@@ -30,6 +30,20 @@ public class VertexArray : IDisposable
     }
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public VertexArray WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.VertexArray, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Casts to <see cref="Handle"/>
     /// </summary>
     /// <param name="data"></param>

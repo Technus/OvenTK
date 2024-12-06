@@ -47,6 +47,20 @@ public abstract class BufferBase
     public static implicit operator int(BufferBase? data) => data?.Handle ?? 0;
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public BufferBase WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Invalidates buffer in OpenGL
     /// </summary>
     public void Invalidate() => GL.InvalidateBufferData(Handle);

@@ -32,6 +32,22 @@ public class SpriteSheet : IDisposable
     }
 
     /// <summary>
+    /// Adds labels to internal components
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public SpriteSheet WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texture.Handle, -1, $"{label}:Texture");
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, _buffer.Handle, -1, $"{label}:BufferStorage");
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texBuffer.Handle, -1, $"{label}:TextureBuffer");
+        return this;
+    }
+
+    /// <summary>
     /// Creates sprite sheet from sprites based on enumeration of streams<br/>
     /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
     /// </summary>

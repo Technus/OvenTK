@@ -21,6 +21,20 @@ public class TextureBuffer : TextureBase, IDisposable
     }
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public new TextureBuffer WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Creates texture based on a buffer
     /// </summary>
     /// <param name="buffer"></param>

@@ -8,6 +8,7 @@ namespace OvenTK.Lib;
 /// </summary>
 public static partial class Extensions
 {
+    internal static bool _isDebug = false;
     internal static readonly double _log2 = Math.Log(2);
 
     /// <summary>
@@ -27,7 +28,7 @@ public static partial class Extensions
             IntPtr pMessage,        // Pointer to message string.
             IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
         {
-            var str = Encoding.UTF8.GetString((byte*)pMessage, length);
+            var str = Encoding.ASCII.GetString((byte*)pMessage, length);
             Debug.WriteLine($"{source}:{type}:{id}:{severity}:{str}");
         }
         static unsafe void OnDebugMessageThrowing(
@@ -39,15 +40,86 @@ public static partial class Extensions
             IntPtr pMessage,        // Pointer to message string.
             IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
         {
-            var str = Encoding.UTF8.GetString((byte*)pMessage, length);
+            var str = Encoding.ASCII.GetString((byte*)pMessage, length);
             Debug.WriteLine($"{source}:{type}:{id}:{severity}:{str}");
             if (type is DebugType.DebugTypeError)
                 throw new InvalidOperationException(str);
         }
 #pragma warning restore S1172
 
-        GL.Enable(EnableCap.DebugOutput);
         GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
+        GL.Enable(EnableCap.DebugOutput);
+        _isDebug = true;
+    }
+
+    /// <summary>
+    /// Turns off debug features
+    /// </summary>
+    public static void DisableDebug()
+    {
+        GL.DebugMessageCallback(default, default);
+        GL.Disable(EnableCap.DebugOutput);
+        _isDebug = false;
+    }
+
+    /// <summary>
+    /// Creates a debug group scope, this is a helper for method call
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="source"></param>
+    /// <param name="caller"></param>
+    /// <returns></returns>
+    public static DebugGroupScope DebugGroup(int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication, [CallerMemberName] string? caller = default)
+    {
+        if (!_isDebug)
+            return default;
+        (caller ?? throw new ArgumentNullException(nameof(caller))).EnsureASCII();
+        GL.PushDebugGroup(source, id, -1, caller);
+        return new DebugGroupScope();
+    }
+
+    /// <summary>
+    /// Creates a debug group scope, this is a helper for user named scope
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="id"></param>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    public static DebugGroupScope DebugGroup(string message, int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication)
+    {
+        if (!_isDebug)
+            return default;
+        message.EnsureASCII();
+        GL.PushDebugGroup(source, id, -1, message);
+        return new DebugGroupScope();
+    }
+
+    /// <summary>
+    /// Debug group scope, dispose once to close, stateless.
+    /// </summary>
+    public readonly struct DebugGroupScope : IDisposable
+    {
+        /// <summary>
+        /// Just closes the debug group
+        /// </summary>
+        public void Dispose()
+        {
+            if (!_isDebug)
+                return;
+            GL.PopDebugGroup();
+        }
+    }
+
+    /// <summary>
+    /// Throws if text is not ASCII
+    /// </summary>
+    /// <param name="text"></param>
+    /// <exception cref="ArgumentOutOfRangeException">When a char is outside of ASCII range</exception>
+    public static void EnsureASCII(this string text)
+    {
+        foreach (var c in text)
+            if (c > 128)
+                throw new ArgumentOutOfRangeException(nameof(text), text, $"Contains non ASCII character: {c}");
     }
 
     /// <summary>
@@ -189,14 +261,29 @@ public static partial class Extensions
     ];
 
     /// <summary>
-    /// Creates an array filled with consecutive numbers starting from 0 up to <paramref name="count"/> exclusive
+    /// Creates an array filled with consecutive numbers starting from 0 up to <paramref name="countLineSegments"/> inclusive
     /// </summary>
-    /// <param name="count"></param>
+    /// <param name="countLineSegments"></param>
     /// <returns></returns>
-    public static byte[] MakeLineIndices(byte count)
+    public static byte[] MakeLineStripIndices(byte countLineSegments)
     {
-        var result = new byte[count];
-        for (byte i = 0; i < count; i++)
+        var result = new byte[countLineSegments + 1];
+        for (byte i = 0; i < result.Length; i++)
+        {
+            result[i] = i;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Creates an array filled with consecutive numbers starting from 0 up to <paramref name="countTrangles"/>+1 inclusive
+    /// </summary>
+    /// <param name="countTrangles"></param>
+    /// <returns></returns>
+    public static byte[] MakeTriangleStripIndices(byte countTrangles)
+    {
+        var result = new byte[countTrangles + 2];
+        for (byte i = 0; i < result.Length; i++)
         {
             result[i] = i;
         }
@@ -255,7 +342,7 @@ public static partial class Extensions
     {
         var count = EnumStorage<TEnum>.EnumValuesWithoutDefault.Count;
         if (zeroChance is -1)
-            zeroChance = 1f/(count + 1);
+            zeroChance = 1f / (count + 1);
 
         var randomRoll = random.NextDouble();
         if (randomRoll < zeroChance)
@@ -268,7 +355,7 @@ public static partial class Extensions
         if (proportion >= 1)//just in case of rounding errors
             return EnumStorage<TEnum>.EnumValuesWithoutDefault[count - 1];
 
-        var id = (int)(proportion*count);
+        var id = (int)(proportion * count);
 
         return EnumStorage<TEnum>.EnumValuesWithoutDefault[id];
     }

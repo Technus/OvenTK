@@ -20,6 +20,20 @@ public class ShaderProgram : IDisposable
     protected ShaderProgram(int handle) => Handle = handle;
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public ShaderProgram WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Program, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Casts to <see cref="Handle"/>
     /// </summary>
     /// <param name="data"></param>
@@ -105,7 +119,7 @@ public class ShaderProgram : IDisposable
     {
         using var vert = vertStream;
         using var frag = fragStream;
-        encoding ??= Encoding.UTF8;
+        encoding ??= Encoding.ASCII;
         using var vertReader = new StreamReader(vert, encoding);
         using var fragReader = new StreamReader(frag, encoding);
         var vertStr = vertReader.ReadToEndAsync();
@@ -126,7 +140,7 @@ public class ShaderProgram : IDisposable
     /// <returns></returns>
     public static ShaderProgram CreateFrom(byte[] vert, byte[] frag, Encoding encoding = default!)
     {
-        encoding ??= Encoding.UTF8;
+        encoding ??= Encoding.ASCII;
         return CreateFrom(encoding.GetString(vert), encoding.GetString(frag));
     }
 

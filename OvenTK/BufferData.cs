@@ -33,6 +33,20 @@ public class BufferData : BufferBase, IDisposable
     }
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public new BufferData WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Resize buffer to new <paramref name="size"/>, on the same OpenGL <see cref="BufferBase.Handle"/>
     /// </summary>
     /// <param name="size">in bytes</param>

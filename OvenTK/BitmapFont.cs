@@ -53,6 +53,24 @@ public class BitmapFont : IDisposable
     }
 
     /// <summary>
+    /// Adds labels to internal components
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public BitmapFont WithLabel(string? label = default)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label ??= _font.Info!.ToString();
+        label.EnsureASCII();
+        for (int page = 0; page < _pages.Length; page++)
+            GL.ObjectLabel(ObjectLabelIdentifier.Texture, _pages[page].Handle, -1, $"{label}:Texture:{page}");
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, _buffer.Handle, -1, $"{label}:BufferStorage");
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texBuffer.Handle, -1, $"{label}:TextureBuffer");
+        return this;
+    }
+
+    /// <summary>
     /// Factory method to load bitmap font
     /// </summary>
     /// <param name="fontDefinition">Stream to XML file of the font definition</param>
@@ -578,6 +596,12 @@ public class BitmapFont : IDisposable
         /// </summary>
         [XmlAttribute(AttributeName = "outline")]
         public int Outline { get; set; }
+
+        /// <summary>
+        /// Used mostly for printing in opengl log
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() => $"{Face}:{Size}:{Bold}:{Italic}:{Charset}:{Unicode}";
     }
 
     /// <summary>

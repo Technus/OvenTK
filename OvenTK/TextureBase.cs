@@ -17,6 +17,20 @@ public abstract class TextureBase
     public static implicit operator int(TextureBase? data) => data?.Handle ?? default;
 
     /// <summary>
+    /// Adds a label to this object
+    /// </summary>
+    /// <param name="label"></param>
+    /// <returns></returns>
+    public TextureBase WithLabel(string label)
+    {
+        if (!Extensions._isDebug)
+            return this;
+        label.EnsureASCII();
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);
+        return this;
+    }
+
+    /// <summary>
     /// Activate texture<br/>
     /// Multiple textures can be bound, if your shader needs more than just one.<br/>
     /// If you want to do that, use GL.ActiveTexture to set which slot GL.BindTexture binds to.<br/>

@@ -357,6 +357,8 @@ public class MainViewModel : DependencyObject
 
     private void GLSetup()
     {
+        using var _ = Extensions.DebugGroup();
+
         //default screen color
         GL.ClearColor(Color.Gray);
 
@@ -408,7 +410,7 @@ public class MainViewModel : DependencyObject
         _sDigitVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(18, 32));
 
         //Common indices for bezier segment
-        _sLineIndices = BufferStorage.CreateFrom(Extensions.MakeLineIndices(4));
+        _sLineIndices = BufferStorage.CreateFrom(Extensions.MakeLineStripIndices(4));
 
         //box/container data buffers
         _dXYAngle = BufferData.Create(_count * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
@@ -536,8 +538,6 @@ public class MainViewModel : DependencyObject
         //sync.WaitClient();
 
         using var read = _dComputeDataOut.Map<float>(BufferAccess.ReadOnly);
-
-        int i = 3;
     }
 
     public void OnRender(TimeSpan t)
@@ -569,8 +569,7 @@ public class MainViewModel : DependencyObject
         GL.Disable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//clear screen
 
-
-        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+        //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
         _pBezier2.Use();
         _vBezier2.Use();
