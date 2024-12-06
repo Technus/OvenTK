@@ -3,8 +3,9 @@ using System.Text;
 
 namespace OvenTK.Lib;
 
-// A simple class meant to help create shaders.
-
+/// <summary>
+/// Wrapper for OpenGL Shader Program (a group of shaders)
+/// </summary>
 [DebuggerDisplay("{Handle}")]
 public class ShaderProgram : IDisposable
 {
@@ -12,12 +13,26 @@ public class ShaderProgram : IDisposable
     private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformLocations;
     private Dictionary<string, (int location, int size, ActiveAttribType type)>? _attributeLocations;
 
+    /// <summary>
+    /// Use factory methods
+    /// </summary>
+    /// <param name="handle"></param>
     protected ShaderProgram(int handle) => Handle = handle;
 
+    /// <summary>
+    /// Casts to <see cref="Handle"/>
+    /// </summary>
+    /// <param name="data"></param>
     public static implicit operator int(ShaderProgram? data) => data?.Handle ?? default;
     
+    /// <summary>
+    /// OpenGL handle
+    /// </summary>
     public int Handle { get; protected set; }
 
+    /// <summary>
+    /// The access to shaders Uniform metadata
+    /// </summary>
     public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformLocations
     {
         get
@@ -45,6 +60,9 @@ public class ShaderProgram : IDisposable
         }
     }
 
+    /// <summary>
+    /// The access to shaders Vertex Array Attribute metadata
+    /// </summary>
     public IReadOnlyDictionary<string, (int location, int size, ActiveAttribType type)> AttributeLocations
     {
         get
@@ -72,6 +90,17 @@ public class ShaderProgram : IDisposable
         }
     }
 
+    /// <summary>
+    /// Helper to build a simple vertex+fragment shader program.<br/>
+    /// This is how you create a simple shader.
+    /// Shaders are written in GLSL, which is a language very similar to C in its semantics.
+    /// The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
+    /// A commented example of GLSL can be found in shader.vert.
+    /// </summary>
+    /// <param name="vert">vertex shader source</param>
+    /// <param name="frag">fragment shader source</param>
+    /// <param name="encoding"></param>
+    /// <returns></returns>
     public static async Task<ShaderProgram> CreateFromAsync(Stream vert, Stream frag, Encoding encoding = default!)
     {
         encoding ??= Encoding.UTF8;
@@ -82,23 +111,49 @@ public class ShaderProgram : IDisposable
         return CreateFrom(await vertStr, await fragStr);
     }
 
+    /// <summary>
+    /// Helper to build a simple vertex+fragment shader program.<br/>
+    /// This is how you create a simple shader.
+    /// Shaders are written in GLSL, which is a language very similar to C in its semantics.
+    /// The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
+    /// A commented example of GLSL can be found in shader.vert.
+    /// </summary>
+    /// <param name="vert">vertex shader source</param>
+    /// <param name="frag">fragment shader source</param>
+    /// <param name="encoding"></param>
+    /// <returns></returns>
     public static ShaderProgram CreateFrom(byte[] vert, byte[] frag, Encoding encoding = default!)
     {
         encoding ??= Encoding.UTF8;
         return CreateFrom(encoding.GetString(vert), encoding.GetString(frag));
     }
 
-    // This is how you create a simple shader.
-    // Shaders are written in GLSL, which is a language very similar to C in its semantics.
-    // The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
-    // A commented example of GLSL can be found in shader.vert.
-    public static ShaderProgram CreateFrom(string vertSrc, string fragSrc)
+    /// <summary>
+    /// Helper to build a simple vertex+fragment shader program.<br/>
+    /// This is how you create a simple shader.
+    /// Shaders are written in GLSL, which is a language very similar to C in its semantics.
+    /// The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
+    /// A commented example of GLSL can be found in shader.vert.
+    /// </summary>
+    /// <param name="vert">vertex shader source</param>
+    /// <param name="frag">fragment shader source</param>
+    /// <returns></returns>
+    public static ShaderProgram CreateFrom(string vert, string frag)
     {
-        using var vertexShader = Shader.CreateFrom(ShaderType.VertexShader, vertSrc);
-        using var fragmentShader = Shader.CreateFrom(ShaderType.FragmentShader, fragSrc);
+        using var vertexShader = Shader.CreateFrom(ShaderType.VertexShader, vert);
+        using var fragmentShader = Shader.CreateFrom(ShaderType.FragmentShader, frag);
         return CreateFrom([vertexShader, fragmentShader]);
     }
 
+    /// <summary>
+    /// Helper to build a shader program.<br/>
+    /// This is how you create a simple shader.
+    /// Shaders are written in GLSL, which is a language very similar to C in its semantics.
+    /// The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
+    /// A commented example of GLSL can be found in shader.vert.
+    /// </summary>
+    /// <param name="shaders">shader sources</param>
+    /// <returns></returns>
     public static ShaderProgram CreateFrom(IEnumerable<Shader> shaders)
     {
         int handle = GL.CreateProgram();
@@ -114,6 +169,11 @@ public class ShaderProgram : IDisposable
         return new ShaderProgram(handle);
     }
 
+    /// <summary>
+    /// Links all shaders together to form a program
+    /// </summary>
+    /// <param name="program"></param>
+    /// <exception cref="InvalidOperationException"></exception>
     private static void LinkProgram(int program)
     {
         GL.LinkProgram(program);
@@ -126,7 +186,10 @@ public class ShaderProgram : IDisposable
         }
     }
 
-    // A wrapper function that enables the shader program.
+    /// <summary>
+    /// Sets this shader program as current<br/>
+    /// A wrapper function that enables the shader program.
+    /// </summary>
     public void Use() => GL.UseProgram(Handle);
 
     // Uniform setters
@@ -143,6 +206,7 @@ public class ShaderProgram : IDisposable
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
+    [Obsolete("Use dedicated Uniform structs and operate on them")]
     public void SetInt(string name, int data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
 
     /// <summary>
@@ -150,6 +214,7 @@ public class ShaderProgram : IDisposable
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
+    [Obsolete("Use dedicated Uniform structs and operate on them")]
     public void SetFloat(string name, float data) => GL.ProgramUniform1(Handle, UniformLocations[name].location, data);
 
     /// <summary>
@@ -162,6 +227,7 @@ public class ShaderProgram : IDisposable
     ///   The matrix is transposed before being sent to the shader.
     ///   </para>
     /// </remarks>
+    [Obsolete("Use dedicated Uniform structs and operate on them")]
     public void SetMatrix4(string name, Matrix4 data) => GL.ProgramUniformMatrix4(Handle, UniformLocations[name].location, true, ref data);
 
     /// <summary>
@@ -169,8 +235,13 @@ public class ShaderProgram : IDisposable
     /// </summary>
     /// <param name="name">The name of the uniform</param>
     /// <param name="data">The data to set</param>
+    [Obsolete("Use dedicated Uniform structs and operate on them")]
     public void SetVector3(string name, Vector3 data) => GL.ProgramUniform3(Handle, UniformLocations[name].location, data);
 
+    /// <summary>
+    /// Disposes using dispose pattern, deletes the program
+    /// </summary>
+    /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposed)
@@ -203,6 +274,9 @@ public class ShaderProgram : IDisposable
 
     ~ShaderProgram() => Dispose(disposing: false);
 
+    /// <summary>
+    /// Disposes using dispose pattern, deletes the program
+    /// </summary>
     public void Dispose()
     {
         Dispose(disposing: true);

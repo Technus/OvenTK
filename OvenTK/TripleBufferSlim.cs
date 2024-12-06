@@ -1,5 +1,9 @@
 ﻿namespace OvenTK.Lib;
 
+/// <summary>
+/// Triple buffer implementation no synchronization, supports multiple reader writers but user code must ensure correct operation
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class TripleBufferSlim<T>
 {
     private int _reads = 0;

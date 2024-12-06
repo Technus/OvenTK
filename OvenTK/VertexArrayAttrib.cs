@@ -1,23 +1,55 @@
 ﻿using System.Diagnostics;
 
 namespace OvenTK.Lib;
-
+/// <summary>
+/// A definition of a 'in' parameter (usually vertex shader input) for OpenGl Vertex array 
+/// </summary>
 [DebuggerDisplay("{Index}")]
-public class VertexArrayAttrib : IDisposable
+public class VertexArrayAttrib
 {
     protected const VertexAttribType _attribTypeNone = default;
 
     private const int _maxSize = 4;
     private bool _disposed;
 
+    /// <summary>
+    /// The assigned index of this parameter
+    /// </summary>
     public int Index { get; protected set; }
+    /// <summary>
+    /// Per how many Instances the value of this parameter should be used (0 means per vertex instead)
+    /// </summary>
     public int Divisor { get; protected set; }
+    /// <summary>
+    /// Size from 1 to 4 (the vec size of this parameter)
+    /// </summary>
     public int Size { get; protected set; }
+    /// <summary>
+    /// What type of data is stored in the buffer
+    /// </summary>
     public VertexAttribType Type { get; protected set; }
+    /// <summary>
+    /// when loading into floating point values should the data be normalized to [0,1]?
+    /// </summary>
     public bool Normalize { get; protected set; }
+    /// <summary>
+    /// Byte stride of a single entry
+    /// </summary>
     public int Stride { get; protected set; }
+    /// <summary>
+    /// Backing buffer
+    /// </summary>
     public BufferBase? Buffer { get; protected set; }
 
+    /// <summary>
+    /// Use factory method
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="size"></param>
+    /// <param name="type"></param>
+    /// <param name="stride"></param>
+    /// <param name="normalize"></param>
+    /// <param name="divisor"></param>
     protected VertexArrayAttrib(BufferBase? buffer, int size, VertexAttribType type, int stride, bool normalize, int divisor)
     {
         Buffer = buffer;
@@ -28,11 +60,35 @@ public class VertexArrayAttrib : IDisposable
         Divisor = divisor;
     }
 
+    /// <summary>
+    /// Casts to <see cref="Index"/>
+    /// </summary>
+    /// <param name="data"></param>
     public static implicit operator int(VertexArrayAttrib data) => data.Index;
 
+    /// <summary>
+    /// Create a parameter definition
+    /// </summary>
+    /// <param name="size"></param>
+    /// <param name="type"></param>
+    /// <param name="stride"></param>
+    /// <param name="normalize"></param>
+    /// <param name="divisor"></param>
+    /// <returns></returns>
     public static VertexArrayAttrib Create(int size, VertexAttribType type, int stride = default, bool normalize = false, int divisor = default)
         => Create(default, size, type, stride, normalize, divisor);
 
+    /// <summary>
+    /// Create a parameter definition
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="size"></param>
+    /// <param name="type"></param>
+    /// <param name="stride"></param>
+    /// <param name="normalize"></param>
+    /// <param name="divisor"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static VertexArrayAttrib Create(BufferBase? buffer, int size, VertexAttribType type, int stride = default, bool normalize = false, int divisor = default)
     {
         if (size > _maxSize)
@@ -84,27 +140,13 @@ public class VertexArrayAttrib : IDisposable
         GL.VertexArrayBindingDivisor(vertexArray, Index, Divisor);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                //Nothing
-            }
-            //Nothing
-            _disposed = true;
-        }
-    }
-
-    // ~VertexArrayAttrib() => Dispose(disposing: false);
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
+    /// <summary>
+    /// Helper to get stride (single entry byte width)
+    /// </summary>
+    /// <param name="size"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public static int GetStride(int size, VertexAttribType type) => size * type switch
     {
         VertexAttribType.Byte or 

@@ -104,7 +104,7 @@ public class MainViewModelOld : DependencyObject
             }
             await Task.Delay(10);
 
-            var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+            var td = Extensions.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
         }
     }
@@ -156,7 +156,7 @@ public class MainViewModelOld : DependencyObject
         GL.DrawElementsInstanced(PrimitiveType.Triangles, _buffers[1].DrawCount, _buffers[1].DrawType, default, _count);
         //sync.WaitClient();
 
-        var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
+        var td = Extensions.GetElapsedTime(sw, Stopwatch.GetTimestamp());
         Debug.WriteLine($"Draw Time {td}");
     }
 

@@ -1,11 +1,17 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 
 namespace OvenTK.Lib;
-
+/// <summary>
+/// Collection of helper methods
+/// </summary>
 public static class Extensions
 {
+    /// <summary>
+    /// Enables printing to Debug and/or throwing exceptions on OpenGL errors
+    /// </summary>
+    /// <param name="throwErrors"></param>
+    /// <exception cref="InvalidOperationException"></exception>
     public static void EnableDebug(bool throwErrors = true)
     {
         static unsafe void OnDebugMessage(
@@ -63,6 +69,18 @@ public static class Extensions
 
     public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
 
+    /// <summary>
+    /// Makes vertexes for <see cref="MakeRectIndices"/> for rectangle based on 2 triangles<br/>
+    /// in such a way that:
+    /// <code>
+    ///    uint xFlag = uint(gl_VertexID % 2);
+    ///    uint yFlag = uint(gl_VertexID / 2);
+    /// </code>
+    /// can be used to make decisions for further processing
+    /// </summary>
+    /// <param name="w"></param>
+    /// <param name="h"></param>
+    /// <returns></returns>
     public static float[] MakeRectVertices(float w, float h)
     {
         w /= 2;
@@ -75,9 +93,28 @@ public static class Extensions
         ];
     }
 
+    /// <summary>
+    /// Makes indices for <see cref="MakeRectVertices(float, float)"/> for rectangle based on 2 triangles<br/>
+    /// in such a way that:
+    /// <code>
+    ///    uint xFlag = uint(gl_VertexID % 2);
+    ///    uint yFlag = uint(gl_VertexID / 2);
+    /// </code>
+    /// can be used to make decisions for further processing
+    /// </summary>
+    /// <returns></returns>
     public static byte[] MakeRectIndices() =>
     [
         1,3,2,
         2,1,0,
     ];
+
+    /// <summary>
+    /// Helper for Stopwatch Elapsed timestamp difference calculation
+    /// </summary>
+    /// <param name="startingTimestamp"></param>
+    /// <param name="endingTimestamp"></param>
+    /// <returns></returns>
+    public static TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp) =>
+        new((long)((endingTimestamp - startingTimestamp) * (10000000D / Stopwatch.Frequency)));
 }

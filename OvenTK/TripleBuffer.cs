@@ -1,5 +1,9 @@
 ﻿namespace OvenTK.Lib;
 
+/// <summary>
+/// Triple buffer implementation mostly thread safe so slow...
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class TripleBuffer<T>
 {
     private readonly SemaphoreSlim _staleSemaphore = new(1, 1);

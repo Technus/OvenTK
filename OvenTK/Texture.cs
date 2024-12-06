@@ -2,19 +2,35 @@
 using System.Diagnostics;
 
 namespace OvenTK.Lib;
-
-// A helper class, much like Shader, meant to simplify loading textures.
-
+/// <summary>
+/// A helper class, much like Shader, meant to simplify loading textures.
+/// </summary>
+/// <remarks>It is a 'sampler2D' texture</remarks>
 [DebuggerDisplay("{Handle}:{Width}/{Height}")]
 public class Texture : IDisposable
 {
     internal const int _mipDefault = 4;
     private bool _disposed;
 
+    /// <summary>
+    /// OpenGL Handle
+    /// </summary>
     public int Handle { get; private set; }
+    /// <summary>
+    /// Texture width in px
+    /// </summary>
     public int Width { get; private set; }
+    /// <summary>
+    /// Texture height in px
+    /// </summary>
     public int Height { get; private set; }
 
+    /// <summary>
+    /// Use factory methods
+    /// </summary>
+    /// <param name="handle"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
     protected Texture(int handle, int width, int height)
     {
         Handle = handle;
@@ -22,20 +38,42 @@ public class Texture : IDisposable
         Height = height;
     }
 
+    /// <summary>
+    /// Casts to <see cref="Handle"/>
+    /// </summary>
+    /// <param name="data"></param>
     public static implicit operator int(Texture? data) => data?.Handle ?? default;
 
+    /// <summary>
+    /// Create texture from <paramref name="bytes"/>
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="mipLevels"></param>
+    /// <returns></returns>
     public static Texture CreateFrom(byte[] bytes, int mipLevels = _mipDefault)
     {
         using var stream = new MemoryStream(bytes);
         return CreateFrom(stream, mipLevels);
     }
 
+    /// <summary>
+    /// Create texture from file on <paramref name="filePath"/>
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <param name="mipLevels"></param>
+    /// <returns></returns>
     public static Texture CreateFrom(string filePath, int mipLevels = _mipDefault)
     {
         using var stream = File.OpenRead(filePath);
         return CreateFrom(stream, mipLevels);
     }
 
+    /// <summary>
+    /// Create texture from stream
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="mipLevels"></param>
+    /// <returns></returns>
     public static Texture CreateFrom(Stream stream, int mipLevels = _mipDefault)
     {
         // Generate handle
@@ -97,15 +135,19 @@ public class Texture : IDisposable
         return new Texture(handle, image.Width, image.Height);
     }
 
-    // Activate texture
-    // Multiple textures can be bound, if your shader needs more than just one.
-    // If you want to do that, use GL.ActiveTexture to set which slot GL.BindTexture binds to.
-    // The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
-    public void Use(int unit)
-    {
-        GL.BindTextureUnit(unit, Handle);
-    }
+    /// <summary>
+    /// Activate texture<br/>
+    /// Multiple textures can be bound, if your shader needs more than just one.<br/>
+    /// If you want to do that, use GL.ActiveTexture to set which slot GL.BindTexture binds to.<br/>
+    /// The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
+    /// </summary>
+    /// <param name="unit"></param>
+    public void Use(int unit) => GL.BindTextureUnit(unit, Handle);
 
+    /// <summary>
+    /// Dispose pattern, deletes OpenGL texture
+    /// </summary>
+    /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposed)
@@ -124,6 +166,9 @@ public class Texture : IDisposable
 
     ~Texture() => Dispose(disposing: false);
 
+    /// <summary>
+    /// Dispose pattern, deletes OpenGL texture
+    /// </summary>
     public void Dispose()
     {
         Dispose(disposing: true);

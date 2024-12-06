@@ -3,10 +3,10 @@
 
 #define _charDataSize 4
 
-layout (location = 0) in vec2 aVertice; //Attribs
-layout (location = 1) in vec4 aXYAngleChar; //Attribs
+layout (location = 0) in vec2 sVertice; //rectangle vertices
+layout (location = 1) in vec4 dXYAngleBMChar; //single char position, rotation and value
 
-layout (location = 0) out vec2 texPos; //to next shader
+layout (location = 0) out vec2 texurePosition; //to next shader
 
 layout (binding = 0) uniform Uniform {
     vec2 size;
@@ -23,34 +23,37 @@ layout(binding = 2) uniform isamplerBuffer fontData;
 
 #define M_PI 3.1415926535897932384626433832795
 
-vec2 viewPort = scale * 2 / size; //*2 due to [-1,1],[-1,1],[-1,1] viewport
+const vec2 viewPort = scale * 2 / size; //*2 due to [-1,1],[-1,1],[-1,1] viewport
 
 void main()
 {
-    float z = (gl_InstanceID+base)/float(count); //for depth testing
+    const float z = (gl_InstanceID+base)/float(count); //for depth testing
 
     //the gl_Position (clip-space output position) here must fall between [-1,1],[-1,1],[-1,1],[for normalization, usually: 1]
-    float w = aXYAngleChar[2];
+    
+    float w = dXYAngleBMChar[2];//get rotation in radians, then below ensure text is upright
     w+=M_PI*1.5;
     w=float(mod(w,M_PI));
     w-=M_PI/2;
-    mat2 A = mat2(cos(w), -sin(w),
-                  sin(w),  cos(w));
-    
-    int id = int(aXYAngleChar[3]);
 
-    ivec4 texCoordsForChar = texelFetch(fontData,id);
+    const mat2 A = mat2(cos(w), -sin(w),
+                        sin(w),  cos(w));//compute rotation matrix
     
-    uint xFlag = uint(gl_VertexID % 2);
-    uint yFlag = uint(gl_VertexID / 2);
+    const int id = int(dXYAngleBMChar[3]);//get the char id
+
+    const ivec4 texCoordsForChar = texelFetch(fontData,id);//fetch texture data about char
     
-    ivec2 aVertice = ivec2(xFlag * texCoordsForChar[2], yFlag * texCoordsForChar[3]);
+    const uint xFlag = uint(gl_VertexID % 2);//compute in which corner we are
+    const uint yFlag = uint(gl_VertexID / 2);//compute in which corner we are
+    
+    const ivec2 sVertice = ivec2(xFlag * texCoordsForChar[2], 
+                                 yFlag * texCoordsForChar[3]);//additional width/height if needed
 
-    texPos.xy = (texCoordsForChar.xy + aVertice.xy)/1024.0;
+    texurePosition.xy = (texCoordsForChar.xy + sVertice.xy);//add position and w/h if needed
+    texurePosition.xy /= 1024.0;//scale from texture size to normalized
 
-    vec4 egg = vec4(aVertice.xy * A, z, 1.0);
-    egg.xy += aXYAngleChar.xy;
-    egg.xy -= pos.xy;
-    egg.xy *= viewPort.xy;
-    gl_Position = egg;
+    gl_Position = vec4(sVertice.xy * A, z, 1.0);//apply rotation matrix to the relative coords
+    gl_Position.xy += dXYAngleBMChar.xy;//move to absolute coords
+    gl_Position.xy -= pos.xy;//move viewport
+    gl_Position.xy *= viewPort.xy;//scale viewport
 }

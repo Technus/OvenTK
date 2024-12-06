@@ -11,7 +11,7 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
-
+        //Very important prepare step...
         GLWpfControl.Start(new()
         {
             MajorVersion = 3,

@@ -1,5 +1,9 @@
 ﻿namespace OvenTK.Lib;
 
+/// <summary>
+/// Triple buffer implementation, no synchronization supports only single reader and writer
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class TripleBufferSimple<T>
 {
     private int _1st = 0;

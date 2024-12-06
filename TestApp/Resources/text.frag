@@ -1,10 +1,10 @@
 ﻿#version 460 compatibility
 
-layout(location = 0) in vec2 texPos;
-layout(binding = 1) uniform sampler2D diffuseTex;
+layout(location = 0) in vec2 texurePosition;//texture position from text.vert
+
+layout(binding = 1) uniform sampler2D fontTexure;//font texture
 
 void main()
 {
-    gl_FragColor = texture(diffuseTex, texPos);
-    //gl_FragColor = vec4(0,0,1,1);
+    gl_FragColor = texture(fontTexure, texurePosition);
 }
