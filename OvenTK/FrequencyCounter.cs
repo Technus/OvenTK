@@ -2,21 +2,21 @@
 
 namespace OvenTK.Lib;
 
-public class FpsCounter : IDisposable
+public class FrequencyCounter : IDisposable
 {
     private const int _movingAverageSampleCount = 10;
 
     private readonly Queue<long> lastFrameTime = [];
     private bool disposedValue;
 
-    public FpsCounter()
+    public FrequencyCounter()
     {
         lastFrameTime.Enqueue(Stopwatch.GetTimestamp());
     }
 
-    public double FPS { get; private set; }
+    public double Frequency { get; private set; }
 
-    public void PushFrame()
+    public void PushEvent()
     {
         if (disposedValue)
             return;
@@ -25,7 +25,7 @@ public class FpsCounter : IDisposable
             return;
         var lastFrameTimeTemp = lastFrameTime.Dequeue();
         var frameTimeSpan = GetElapsedTime(lastFrameTimeTemp, Stopwatch.GetTimestamp());
-        FPS = 1000D / frameTimeSpan.TotalMilliseconds * _movingAverageSampleCount;
+        Frequency = 1000D / frameTimeSpan.TotalMilliseconds * _movingAverageSampleCount;
     }
 
     protected virtual void Dispose(bool disposing)
