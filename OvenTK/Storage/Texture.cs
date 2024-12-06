@@ -1,7 +1,6 @@
 ﻿using Mapper;
 using StbImageSharp;
 using System.Diagnostics;
-using System.Xml.Serialization;
 
 namespace OvenTK.Lib;
 /// <summary>
@@ -43,7 +42,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <returns></returns>
     public Texture WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);

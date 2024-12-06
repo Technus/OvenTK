@@ -12,12 +12,19 @@ public class TextureBuffer : TextureBase, IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Backing buffer
+    /// </summary>
+    public BufferBase? Buffer { get; protected set; }
+
+    /// <summary>
     /// Use factory methods
     /// </summary>
     /// <param name="handle"></param>
-    protected TextureBuffer(int handle)
+    /// <param name="buffer"></param>
+    protected TextureBuffer(int handle, BufferBase? buffer = default)
     {
         Handle = handle;
+        Buffer = buffer;
     }
 
     /// <summary>
@@ -27,7 +34,7 @@ public class TextureBuffer : TextureBase, IDisposable
     /// <returns></returns>
     public TextureBuffer WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, Handle, -1, label);

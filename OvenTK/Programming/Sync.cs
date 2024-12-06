@@ -1,4 +1,4 @@
-﻿namespace OvenTK.Lib;
+﻿namespace OvenTK.Lib.Programming;
 /// <summary>
 /// Wrapper for OpenGL sync
 /// </summary>
@@ -81,7 +81,7 @@ public readonly struct Sync : IDisposable
     /// <param name="timeout"></param>
     /// <param name="flags"></param>
     /// <returns>the sync status</returns>
-    public WaitSyncStatus WaitClient(ulong timeout = _timeoutIgnored, ClientWaitSyncFlags flags = ClientWaitSyncFlags.SyncFlushCommandsBit) 
+    public WaitSyncStatus WaitClient(ulong timeout = _timeoutIgnored, ClientWaitSyncFlags flags = ClientWaitSyncFlags.SyncFlushCommandsBit)
         => GL.ClientWaitSync(Handle, flags, timeout);
 
     /// <summary>

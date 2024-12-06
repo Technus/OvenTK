@@ -40,7 +40,7 @@ public class SpriteSheet : IDisposable
     /// <returns></returns>
     public SpriteSheet WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texture.Handle, -1, $"{label}:Texture");
@@ -164,8 +164,8 @@ public class SpriteSheet : IDisposable
     public class Mapping : ISprite
     {
         private readonly List<IMappedImageInfo> _mappedImages = [];
-        private int _width = 0;
-        private int _height = 0;
+        private int _width;
+        private int _height;
 
         /// <summary>
         /// Holds the locations of all the individual images within the sprite image.

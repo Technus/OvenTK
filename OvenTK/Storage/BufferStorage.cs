@@ -39,7 +39,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// <returns></returns>
     public BufferStorage WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);
@@ -223,6 +223,23 @@ public class BufferStorage : BufferBase, IDisposable
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
         GL.NamedBufferStorage(handle, size, memory, hint);
+        return new(handle, size, hint, GetDrawType<V>(drawType));
+    }
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
+    public unsafe static BufferStorage CreateFrom<V>(V[,,,] memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct
+    {
+        GL.CreateBuffers(1, out int handle);
+        var size = memory.SizeOf();
+        fixed (V* ptr = memory)
+            GL.NamedBufferStorage(handle, size, (nint)ptr, hint);
         return new(handle, size, hint, GetDrawType<V>(drawType));
     }
 

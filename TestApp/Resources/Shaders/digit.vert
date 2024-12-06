@@ -43,7 +43,7 @@ void main()
 
     const uint xFlag = uint(gl_VertexID % 2);//compute in which corner we are
     const uint yFlag = uint(gl_VertexID / 2);//compute in which corner we are
-    texurePosition.xy = vec2(xFlag, yFlag);//set texture position output (from 1 row of 16 chars) 
+    texurePosition.xy = vec2(xFlag+id, yFlag);//set texture position output (from 1 row of 16 chars) 
     texurePosition.xy /= texSize;//scale from texture size to normalized
 
     gl_Position = vec4((sVertice.xy + digitPos.xy) * A, z, 1.0);//apply rotation matrix to the relative coords

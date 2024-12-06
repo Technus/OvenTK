@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace OvenTK.Lib;
+namespace OvenTK.Lib.Programming;
 
 internal class Sampler : IDisposable
 {

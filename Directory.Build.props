@@ -1,16 +1,18 @@
 <Project>
 	<PropertyGroup Label="Common Properties">
-		<Version>1.0.0.0</Version>
+		<Version>1.0.2.0</Version>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		
 		<PackageIcon>Neith_spacepedia.png</PackageIcon>
 		<PackageTags>OvenTK;OpenTK;OpenGL;</PackageTags>
+		<Authors>Technus</Authors>
 		<PackageProjectUrl>https://github.com/Technus/OvenTK</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Technus/OvenTK</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<Copyright></Copyright>
 		
 		<CustomNamePrefix>OvenTK</CustomNamePrefix>
 		<AssemblyName>$(CustomNamePrefix).$(MSBuildProjectName)</AssemblyName>

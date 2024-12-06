@@ -1,4 +1,4 @@
-﻿namespace OvenTK.Lib;
+namespace OvenTK.Lib;
 
 /// <summary>
 /// Base class for GPU Data or Storage Buffers
@@ -70,9 +70,13 @@ public abstract class BufferBase
     public void CopyTo(BufferBase other, nint count = -1, nint readOffset = default, nint writeOffset = default)
     {
         if (count is -1)
-            count = other.Size - writeOffset < Size - readOffset ? Size - readOffset : other.Size - writeOffset;
-        if (other.Size - writeOffset - count < 0 || Size - count - readOffset < 0)
-            throw new InvalidOperationException($"Buffer cannot copy {count}, Remaining Size: {Size - readOffset}->{other.Size - writeOffset}");
+        {
+            var c1 = other.Size - writeOffset;
+            var c2 = Size - readOffset;
+            count = c1 < c2 ? c1 : c2;
+        }
+        if (other.Size - writeOffset < count || Size - readOffset < count)
+            throw new InvalidOperationException($"Buffer cannot copy {count} bytes, Remaining Size: {Size - readOffset}->{other.Size - writeOffset}");
         GL.CopyNamedBufferSubData(Handle, other.Handle, readOffset, writeOffset, count);
     }
 
@@ -86,8 +90,8 @@ public abstract class BufferBase
     public unsafe void Write<V>(ref readonly Memory<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         using var pin = value.Pin();
         GL.NamedBufferSubData(Handle, writeOffset, size, (nint)pin.Pointer);
     }
@@ -102,8 +106,8 @@ public abstract class BufferBase
     public unsafe void Write<V>(ref readonly ReadOnlyMemory<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         using var pin = value.Pin();
         GL.NamedBufferSubData(Handle, writeOffset, size, (nint)pin.Pointer);
     }
@@ -118,8 +122,8 @@ public abstract class BufferBase
     public unsafe void Write<V>(ref readonly Span<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         fixed (V* p = value)
             GL.NamedBufferSubData(Handle, writeOffset, size, (nint)p);
     }
@@ -134,8 +138,8 @@ public abstract class BufferBase
     public unsafe void Write<V>(ref readonly ReadOnlySpan<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         fixed (V* p = value)
             GL.NamedBufferSubData(Handle, writeOffset, size, (nint)p);
     }
@@ -150,8 +154,8 @@ public abstract class BufferBase
     public unsafe void Write<V>(ref readonly V value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         fixed (V* p = &value)
             GL.NamedBufferSubData(Handle, writeOffset, size, (nint)p);
     }
@@ -166,8 +170,8 @@ public abstract class BufferBase
     public void Write<V>(V[] value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         GL.NamedBufferSubData(Handle, writeOffset, size, value);
     }
 
@@ -181,8 +185,8 @@ public abstract class BufferBase
     public void Write<V>(V[,] value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         GL.NamedBufferSubData(Handle, writeOffset, size, value);
     }
 
@@ -196,9 +200,25 @@ public abstract class BufferBase
     public void Write<V>(V[,,] value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
         GL.NamedBufferSubData(Handle, writeOffset, size, value);
+    }
+
+    /// <summary>
+    /// Copy the array to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public unsafe void Write<V>(V[,,,] value, nint writeOffset = default) where V : struct
+    {
+        var size = value.SizeOf();
+        if (Size - size - writeOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size - writeOffset}");
+        fixed (V* ptr = value)
+            GL.NamedBufferSubData(Handle, writeOffset, size, (nint)ptr);
     }
 
     /// <summary>
@@ -211,8 +231,8 @@ public abstract class BufferBase
     public unsafe void Read<V>(ref readonly Memory<V> value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         using var pin = value.Pin();
         GL.GetNamedBufferSubData(Handle, readOffset, size, (nint)pin.Pointer);
     }
@@ -227,8 +247,8 @@ public abstract class BufferBase
     public unsafe void Read<V>(ref readonly Span<V> value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         fixed (V* p = value)
             GL.GetNamedBufferSubData(Handle, readOffset, size, (nint)p);
     }
@@ -243,8 +263,8 @@ public abstract class BufferBase
     public unsafe void Read<V>(ref readonly V value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         fixed (V* p = &value)
             GL.GetNamedBufferSubData(Handle, readOffset, size, (nint)p);
     }
@@ -259,8 +279,8 @@ public abstract class BufferBase
     public void Read<V>(V[] value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         GL.GetNamedBufferSubData(Handle, readOffset, size, value);
     }
 
@@ -274,8 +294,8 @@ public abstract class BufferBase
     public void Read<V>(V[,] value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         GL.GetNamedBufferSubData(Handle, readOffset, size, value);
     }
 
@@ -289,9 +309,41 @@ public abstract class BufferBase
     public void Read<V>(V[,,] value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
-        if (Size < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
         GL.GetNamedBufferSubData(Handle, readOffset, size, value);
+    }
+
+    /// <summary>
+    /// Read to array
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="readOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public unsafe void Read<V>(V[,,,] value, nint readOffset = default) where V : struct
+    {
+        var size = value.SizeOf();
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size - readOffset}->{size}");
+        fixed (V* ptr = value)
+            GL.GetNamedBufferSubData(Handle, readOffset, size, (nint)ptr);
+    }
+
+    /// <summary>
+    /// Copy content from GPU to CPU
+    /// </summary>
+    /// <param name="count">in bytes</param>
+    /// <param name="readOffset">in bytes</param>
+    /// <returns></returns>
+    public byte[] ToByteArray(nint count = -1, nint readOffset = default)
+    {
+        var size = count is -1 ? Size - readOffset : count;
+        if (Size - size - readOffset < 0)
+            throw new InvalidOperationException($"Buffer cannot read, Size: {Size - readOffset}->{size}");
+        var bytes = new byte[size];
+        GL.GetNamedBufferSubData(Handle, readOffset, size, bytes);
+        return bytes;
     }
 
     /// <summary>
@@ -310,8 +362,8 @@ public abstract class BufferBase
     /// Map buffer range to span, using the <see cref="IDisposable"/> <see cref="Mapping{T}"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="offset"></param>
-    /// <param name="length"></param>
+    /// <param name="offset">in bytes</param>
+    /// <param name="length">in bytes</param>
     /// <param name="bufferAccess"></param>
     /// <returns></returns>
     public RangeMapping<T> MapRange<T>(nint offset, int length, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
@@ -356,14 +408,14 @@ public abstract class BufferBase
         /// <summary>
         /// For explicitly mapped buffers
         /// </summary>
-        public void Flush(nint offset = default, int length = default)
-            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Buffer.Size - offset : length);
+        public void Flush(nint offset = default, int length = -1)
+            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is -1 ? Buffer.Size - offset : length);
         /// <summary>
         /// For explicitly mapped buffers
         /// </summary>
         /// <remarks>It adds offset... of 0...</remarks>
-        public void FlushRelative(nint offset = default, int length = default)
-            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Buffer.Size - offset : length);
+        public void FlushRelative(nint offset = default, int length = -1)
+            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is -1 ? Buffer.Size - offset : length);
         /// <summary>
         /// Unmaps the mapping
         /// </summary>
@@ -429,14 +481,18 @@ public abstract class BufferBase
         /// <summary>
         /// For explicitly mapped buffers
         /// </summary>
-        public void Flush(nint offset = default, int length = default)
-            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is 0 ? Size - offset : length);
+        /// <param name="offset">in bytes</param>
+        /// <param name="length">in bytes</param>
+        public void Flush(nint offset = default, int length = -1)
+            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset, length is -1 ? Size - offset : length);
         /// <summary>
         /// For explicitly mapped buffers
         /// </summary>
+        /// <param name="offset">in bytes</param>
+        /// <param name="length">in bytes</param>
         /// <remarks>It adds <see cref="Offset"/></remarks>
-        public void FlushRelative(nint offset = default, int length = default)
-            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset + Offset, length is 0 ? Size - offset : length);
+        public void FlushRelative(nint offset = default, int length = -1)
+            => GL.FlushMappedNamedBufferRange(Buffer.Handle, offset + Offset, length is -1 ? Size - offset : length);
         /// <summary>
         /// Unmaps the mapping
         /// </summary>

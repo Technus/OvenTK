@@ -23,7 +23,10 @@ public abstract class TextureBase
     /// The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
     /// </summary>
     /// <param name="unit"></param>
-    public void Use(int unit) => GL.BindTextureUnit(unit, Handle);
+    public void Use(int unit)
+    {
+        GL.BindTextureUnit(unit, Handle);
+    }
 
     /// <summary>
     /// Activate texture<br/>
@@ -34,6 +37,8 @@ public abstract class TextureBase
     /// <param name="unit"></param>
     /// <param name="access"></param>
     /// <param name="format"></param>
-    public void UseImage(int unit, TextureAccess access = TextureAccess.WriteOnly, SizedInternalFormat format = SizedInternalFormat.R32f) =>
+    public void UseImage(int unit, TextureAccess access = TextureAccess.WriteOnly, SizedInternalFormat format = SizedInternalFormat.R32f)
+    {
         GL.BindImageTexture(unit, Handle, 0, false, 0, access, format);
+    }
 }

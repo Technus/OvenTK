@@ -59,7 +59,7 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public BitmapFont WithLabel(string? label = default)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label ??= _font.Info!.ToString();
         label.EnsureASCII();
@@ -153,7 +153,7 @@ public class BitmapFont : IDisposable
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLineTo(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
+            WriteTextTo(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
             i += text.Length;
         }
 
@@ -189,7 +189,7 @@ public class BitmapFont : IDisposable
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLineTo(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
+            WriteTextTo(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
             i += maxLen;
         }
 
@@ -235,7 +235,7 @@ public class BitmapFont : IDisposable
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLineTo(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
+            WriteTextTo(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
             i += text.Length;
         }
 
@@ -270,7 +270,7 @@ public class BitmapFont : IDisposable
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLineTo(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
+            WriteTextTo(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
             i += maxLen;
         }
 
@@ -311,25 +311,32 @@ public class BitmapFont : IDisposable
     /// <param name="text"></param>
     /// <param name="stride">in case the dataOut is transposed stride can be used to iterate over bigger iterator instead</param>
     /// <param name="cleanRest">fill remaining span (also using stride) to '\0' at -inf,-inf position</param>
-    public void WriteLineTo(Span<Char> dataOut, float x, float y, float rotation, ReadOnlySpan<char> text, int stride = 1, bool cleanRest = true)
+    public void WriteTextTo(Span<Char> dataOut, float x, float y, float rotation, ReadOnlySpan<char> text, int stride = 1, bool cleanRest = true)
     {
         var cos = Math.Cos(rotation);
         var sin = Math.Sin(rotation);
-        var advance = 0;
+        var advanceX = 0;
+        var advanceY = 0;
         var i = 0;
         foreach (var ch in text)
         {
             if (!_stringToGpu.TryGetValue(ch, out var val))
                 val = _space;
-            var (dx, dy) = (advance + val.def.Xoffset, _font.Common!.Base - (val.def.Yoffset + val.def.Height));//pre rotation, with y flip...
+            var (dx, dy) = (advanceX + val.def.Xoffset, advanceY + _font.Common!.Base - (val.def.Yoffset + val.def.Height));//pre rotation, with y flip...
             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
             dataOut[i].X = (float)(x + rdx);
             dataOut[i].Y = (float)(y + rdy);
             dataOut[i].Angle = rotation;
             dataOut[i].Id = val.id;
 
-            advance += val.def.Xadvance;
+            advanceX += val.def.Xadvance;
             i += stride;
+
+            if (ch is '\n')
+            {
+                advanceX = 0;
+                advanceY += _font.Common.LineHeight;
+            }
         }
         
         if (cleanRest) 

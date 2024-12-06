@@ -11,6 +11,10 @@ public class ShaderProgram : IDisposable
 {
     private bool _disposed;
     private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformLocations;
+    private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformValueLocations;
+    private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformTextureLocations;
+    private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformSamplerLocations;
+    private Dictionary<string, (int location, int size, ActiveUniformType type)>? _uniformImageLocations;
     private Dictionary<string, (int location, int size, ActiveAttribType type)>? _attributeLocations;
 
     /// <summary>
@@ -26,7 +30,7 @@ public class ShaderProgram : IDisposable
     /// <returns></returns>
     public ShaderProgram WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Program, Handle, -1, label);
@@ -73,6 +77,30 @@ public class ShaderProgram : IDisposable
             return _uniformLocations;
         }
     }
+
+    /// <summary>
+    /// Filtered view on <see cref="UniformLocations"/>, with simple values only
+    /// </summary>
+    public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformValueLocations =>
+        _uniformValueLocations ??= UniformLocations.Where(x => x.Value.type.GetOverallType().IsValue()).ToDictionary(x => x.Key, x => x.Value);
+
+    /// <summary>
+    /// Filtered view on <see cref="UniformLocations"/>, with all textures/samplers/images
+    /// </summary>
+    public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformTextureLocations =>
+        _uniformTextureLocations ??= UniformLocations.Where(x => x.Value.type.GetOverallType().IsTexture()).ToDictionary(x => x.Key, x => x.Value);
+
+    /// <summary>
+    /// Filtered view on <see cref="UniformLocations"/>, with samplers only
+    /// </summary>
+    public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformSamplerLocations =>
+        _uniformSamplerLocations ??= UniformLocations.Where(x => x.Value.type.GetOverallType() is UniformTypeExtensions.UniformType.Sampler).ToDictionary(x => x.Key, x => x.Value);
+
+    /// <summary>
+    /// Filtered view on <see cref="UniformLocations"/>, with images only
+    /// </summary>
+    public IReadOnlyDictionary<string, (int location, int size, ActiveUniformType type)> UniformImageLocations =>
+        _uniformImageLocations ??= UniformLocations.Where(x => x.Value.type.GetOverallType() is UniformTypeExtensions.UniformType.Image).ToDictionary(x => x.Key, x => x.Value);
 
     /// <summary>
     /// The access to shaders Vertex Array Attribute metadata
@@ -262,4 +290,5 @@ public class ShaderProgram : IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
+
 }

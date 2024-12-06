@@ -1,6 +1,5 @@
 ﻿using StbImageSharp;
 using System.Diagnostics;
-using System.Text;
 
 namespace OvenTK.Lib;
 /// <summary>
@@ -8,110 +7,6 @@ namespace OvenTK.Lib;
 /// </summary>
 public static partial class Extensions
 {
-    /// <summary>
-    /// is the OpenGL debug enabled or not
-    /// </summary>
-    public static bool InDebug { get; private set; } = false;
-
-    /// <summary>
-    /// Enables printing to Debug and/or throwing exceptions on OpenGL errors
-    /// </summary>
-    /// <param name="throwErrors"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public static void EnableDebug(bool throwErrors = true)
-    {
-#pragma warning disable S1172
-        static unsafe void OnDebugMessage(
-            DebugSource source,     // Source of the debugging message.
-            DebugType type,         // Type of the debugging message.
-            int id,                 // ID associated with the message.
-            DebugSeverity severity, // Severity of the message.
-            int length,             // Length of the string in pMessage.
-            IntPtr pMessage,        // Pointer to message string.
-            IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
-        {
-            var str = Encoding.ASCII.GetString((byte*)pMessage, length);
-            Debug.WriteLine($"{source}:{type}:{id}:{severity}:{str}");
-        }
-        static unsafe void OnDebugMessageThrowing(
-            DebugSource source,     // Source of the debugging message.
-            DebugType type,         // Type of the debugging message.
-            int id,                 // ID associated with the message.
-            DebugSeverity severity, // Severity of the message.
-            int length,             // Length of the string in pMessage.
-            IntPtr pMessage,        // Pointer to message string.
-            IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
-        {
-            var str = Encoding.ASCII.GetString((byte*)pMessage, length);
-            Debug.WriteLine($"{source}:{type}:{id}:{severity}:{str}");
-            if (type is DebugType.DebugTypeError)
-                throw new InvalidOperationException(str);
-        }
-#pragma warning restore S1172
-
-        GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
-        GL.Enable(EnableCap.DebugOutput);
-        InDebug = true;
-    }
-
-    /// <summary>
-    /// Turns off debug features
-    /// </summary>
-    public static void DisableDebug()
-    {
-        GL.DebugMessageCallback(default, default);
-        GL.Disable(EnableCap.DebugOutput);
-        InDebug = false;
-    }
-
-    /// <summary>
-    /// Creates a debug group scope, this is a helper for method call
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="source"></param>
-    /// <param name="caller"></param>
-    /// <returns></returns>
-    public static DebugGroupScope DebugGroup(int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication, [CallerMemberName] string? caller = default)
-    {
-        if (!InDebug)
-            return default;
-        (caller ?? throw new ArgumentNullException(nameof(caller))).EnsureASCII();
-        GL.PushDebugGroup(source, id, -1, caller);
-        return new DebugGroupScope();
-    }
-
-    /// <summary>
-    /// Creates a debug group scope, this is a helper for user named scope
-    /// </summary>
-    /// <param name="message"></param>
-    /// <param name="id"></param>
-    /// <param name="source"></param>
-    /// <returns></returns>
-    public static DebugGroupScope DebugGroup(string message, int id = default, DebugSourceExternal source = DebugSourceExternal.DebugSourceApplication)
-    {
-        if (!InDebug)
-            return default;
-        message.EnsureASCII();
-        GL.PushDebugGroup(source, id, -1, message);
-        return new DebugGroupScope();
-    }
-
-    /// <summary>
-    /// Debug group scope, dispose once to close, stateless.
-    /// </summary>
-    public readonly struct DebugGroupScope : IDisposable
-    {
-        /// <summary>
-        /// Just closes the debug group
-        /// </summary>
-        public void Dispose()
-        {
-            if (!InDebug)
-                return;
-            GL.PopDebugGroup();
-        }
-    }
-
     /// <summary>
     /// Throws if text is not ASCII
     /// </summary>
@@ -178,6 +73,14 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="arr"></param>
     /// <returns></returns>
+    public static int SizeOf<T>(this T[,,,] arr) => arr.Length * Unsafe.SizeOf<T>();
+
+    /// <summary>
+    /// Get the byte size of <paramref name="arr"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
     public static int SizeOf<T>(this T[,,] arr) => arr.Length * Unsafe.SizeOf<T>();
 
     /// <summary>
@@ -211,7 +114,80 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct =>
+        new((void*)p, bytes / sizeof(T));
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this Span<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this byte[] data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe Span<T> AsSpan<T>(this T[,,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
 
     /// <summary>
     /// Unsafe helper to wrap <see langword="nint"/> pointer to data of size <paramref name="bytes"/> into read only span
@@ -220,7 +196,92 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct => new((void*)p, bytes / sizeof(T));
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct =>
+        new((void*)p, bytes / sizeof(T));
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this Span<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this ReadOnlySpan<byte> data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this byte[] data) where T : struct
+    {
+        fixed (byte* ptr = data)
+            return new(ptr, data.Length / sizeof(T));
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
+
+    /// <summary>
+    /// Unsafe helper to wrap <paramref name="data"/> into read only span
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,,] data) where T : struct
+    {
+        fixed (T* ptr = data)
+            return new(ptr, data.Length);
+    }
 
     /// <summary>
     /// Makes vertexes for <see cref="MakeRectIndices"/> for rectangle based on 2 triangles<br/>

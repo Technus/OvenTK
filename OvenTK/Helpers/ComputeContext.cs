@@ -1,4 +1,6 @@
-﻿namespace OvenTK.Lib;
+﻿using OvenTK.Lib.Helpers;
+
+namespace OvenTK.Lib;
 
 /// <summary>
 /// Compute context scope
@@ -11,12 +13,19 @@ public class ComputeContext : ContextBase
     public ShaderProgram Program { get; set; }
 
     /// <summary>
+    /// Helper to use correct textures
+    /// </summary>
+    public TextureArray? TextureArray { get; set; }
+
+    /// <summary>
     /// Creates compute context
     /// </summary>
     /// <param name="program"></param>
-    public ComputeContext(ShaderProgram program)
+    /// <param name="textureArray"></param>
+    public ComputeContext(ShaderProgram program, TextureArray? textureArray = default)
     {
         Program = program;
+        TextureArray = textureArray;
     }
 
     /// <summary>
@@ -25,6 +34,7 @@ public class ComputeContext : ContextBase
     /// <returns></returns>
     public override Scope Use()
     {
+        TextureArray?.Use();
         Program.Use();
         return base.Use();
     }
