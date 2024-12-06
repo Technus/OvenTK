@@ -37,7 +37,7 @@ public class MainViewModel : DependencyObject
     private BufferBase[] _buffers;
     private VertexArray _vao;
     private Texture _texture;
-    private Shader _shader;
+    private ShaderProgram _shader;
     private readonly FpsCounter _fpsCounter = new();
 
     public double FPS
@@ -145,7 +145,7 @@ public class MainViewModel : DependencyObject
         _texture = Texture.CreateFrom(
             Application.GetResourceStream(new Uri(@"\Resources\tower1.png", UriKind.Relative)).Stream);
 
-        _shader = Shader.CreateFromAsync(
+        _shader = ShaderProgram.CreateFromAsync(
             Application.GetResourceStream(new Uri(@"\Resources\vertex.glsl", UriKind.Relative)).Stream,
             Application.GetResourceStream(new Uri(@"\Resources\fragment.glsl", UriKind.Relative)).Stream).Result;
     }
