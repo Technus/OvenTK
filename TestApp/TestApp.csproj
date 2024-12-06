@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net461;net8.0-windows</TargetFrameworks>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
+
+	<Choose>
+		<When Condition=" '$(TargetFramework)' == 'net8.0-windows' ">
+			<ItemGroup>
+				<PackageReference Include="OpenTK.GLWpfControl" Version="4.3.2" />
+				<PackageReference Include="OpenTK" Version="4.8.2" />
+			</ItemGroup>
+		</When>
+		<Otherwise>
+			<ItemGroup>
+				<PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" />
+				<PackageReference Include="OpenTK" Version="3.3.3" />
+			</ItemGroup>
+		</Otherwise>
+	</Choose>
+
+	<ItemGroup>
+		<ProjectReference Include="..\OvenTK\OvenTK.csproj" />
+	</ItemGroup>
+
+</Project>
