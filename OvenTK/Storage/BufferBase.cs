@@ -1,4 +1,4 @@
-﻿namespace OvenTK.Lib;
+namespace OvenTK.Lib;
 
 /// <summary>
 /// Base class for GPU Data or Storage Buffers
@@ -70,9 +70,13 @@ public abstract class BufferBase
     public void CopyTo(BufferBase other, nint count = -1, nint readOffset = default, nint writeOffset = default)
     {
         if (count is -1)
-            count = other.Size - writeOffset < Size - readOffset ? Size - readOffset : other.Size - writeOffset;
-        if (other.Size - writeOffset - count < 0 || Size - count - readOffset < 0)
-            throw new InvalidOperationException($"Buffer cannot copy {count}, Remaining Size: {Size - readOffset}->{other.Size - writeOffset}");
+        {
+            var c1 = other.Size - writeOffset;
+            var c2 = Size - readOffset;
+            count = c1 < c2 ? c1 : c2;
+        }
+        if (other.Size - writeOffset < count || Size - readOffset < count)
+            throw new InvalidOperationException($"Buffer cannot copy {count} bytes, Remaining Size: {Size - readOffset}->{other.Size - writeOffset}");
         GL.CopyNamedBufferSubData(Handle, other.Handle, readOffset, writeOffset, count);
     }
 
