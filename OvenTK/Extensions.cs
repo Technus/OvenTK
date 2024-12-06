@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using StbImageSharp;
+using System.Diagnostics;
 using System.Text;
 
 namespace OvenTK.Lib;
@@ -7,6 +8,8 @@ namespace OvenTK.Lib;
 /// </summary>
 public static class Extensions
 {
+    internal const double _log2 = 0.30102999566398119521373889472449;
+
     /// <summary>
     /// Enables printing to Debug and/or throwing exceptions on OpenGL errors
     /// </summary>
@@ -117,4 +120,21 @@ public static class Extensions
     /// <returns></returns>
     public static TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp) =>
         new((long)((endingTimestamp - startingTimestamp) * (10000000D / Stopwatch.Frequency)));
+
+    /// <summary>
+    /// Loads image from stream (not the raw pixels, a image file)
+    /// </summary>
+    /// <param name="image">stream to read and dispose</param>
+    /// <param name="flipY">should flip vertically</param>
+    /// <returns></returns>
+    public static ImageResult LoadImage(this Stream image, bool flipY = true)
+    {
+        using var stream = image;
+        // OpenGL has it's texture origin in the lower left corner instead of the top left corner,
+        // so we tell StbImageSharp to flip the image when loading.
+        StbImage.stbi_set_flip_vertically_on_load_thread(flipY ? 1 : 0);
+
+        // Here we open a stream to the file and pass it to StbImageSharp to load.
+        return ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+    }
 }

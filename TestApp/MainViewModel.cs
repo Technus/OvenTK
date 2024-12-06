@@ -346,11 +346,11 @@ public class MainViewModel : DependencyObject
         _vDigits = VertexArray.Create(_sRectIndices, [
             VertexArrayAttrib.Create(_sDigitVertices,       2, VertexAttribType.Float),
             VertexArrayAttrib.Create(_dXYAngle,             3, VertexAttribType.Float,        divisor: 1),
-            VertexArrayAttrib.Create(_dIdProg,                  2, VertexAttribType.UnsignedInt,  divisor: 1),
+            VertexArrayAttrib.Create(_dIdProg,              2, VertexAttribType.UnsignedInt,  divisor: 1),
         ]);
         _vText = VertexArray.Create(_sRectIndices, [
             VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
-            VertexArrayAttrib.Create(_dXYAngleBMChar,                4, VertexAttribType.Float,        divisor: 1),
+            VertexArrayAttrib.Create(_dXYAngleBMChar,       4, VertexAttribType.Float,        divisor: 1),
         ]);
 
         //shader program definitions

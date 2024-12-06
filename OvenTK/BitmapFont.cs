@@ -368,31 +368,6 @@ public class BitmapFont : IDisposable
     }
 
     /// <summary>
-    /// Dispose pattern
-    /// </summary>
-    /// <param name="disposing"></param>
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposedValue)
-        {
-            if (disposing)
-            {
-                // TODO: dispose managed state (managed objects)
-            }
-
-            _texBuffer.Dispose();
-            _buffer.Dispose();
-
-            foreach (var page in _pages)
-            {
-                page.Dispose();
-            }
-            _stringToGpu.Clear();
-            _disposedValue = true;
-        }
-    }
-
-    /// <summary>
     /// Each glyph on screen is an single instance of "2 triangles (or a quad...)", this helps to compute how much instances are to be rendered from <paramref name="data"/>
     /// </summary>
     /// <param name="data"></param>
@@ -425,6 +400,32 @@ public class BitmapFont : IDisposable
         GL.BindTextureUnit(textureUnit++, _texBuffer);
         return textureUnit;
     }
+
+    /// <summary>
+    /// Dispose pattern
+    /// </summary>
+    /// <param name="disposing"></param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            if (disposing)
+            {
+                // TODO: dispose managed state (managed objects)
+            }
+
+            _texBuffer.Dispose();
+            _buffer.Dispose();
+
+            foreach (var page in _pages)
+            {
+                page.Dispose();
+            }
+            _stringToGpu.Clear();
+            _disposedValue = true;
+        }
+    }
+
 
     ~BitmapFont() => Dispose(disposing: false);
 
@@ -658,7 +659,7 @@ public class BitmapFont : IDisposable
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? '\0');
+        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? default);
     }
 
     /// <summary>
@@ -745,7 +746,7 @@ public class BitmapFont : IDisposable
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? '\0');
+        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? default);
     }
 
     /// <summary>

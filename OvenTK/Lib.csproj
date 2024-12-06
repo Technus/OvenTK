@@ -34,6 +34,7 @@
 	</Choose>
 
 	<ItemGroup>
+		<PackageReference Include="RectanglePacker" Version="1.1.0" />
 		<PackageReference Include="StbImageSharp" Version="2.30.15" />
 
 		<Using Include="OpenTK.Graphics.OpenGL4" />

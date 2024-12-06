@@ -20,7 +20,7 @@ layout (binding = 0) uniform Uniform {
 
 #define M_PI 3.1415926535897932384626433832795
 
-vec2 viewPort = scale * 2 / size; //*2 due to [-1,1],[-1,1],[-1,1] viewport
+const vec2 viewPort = scale * 2 / size; //*2 due to [-1,1],[-1,1],[-1,1] viewport
 
 void main()
 {

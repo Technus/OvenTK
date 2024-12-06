@@ -1,5 +1,7 @@
-﻿using StbImageSharp;
+﻿using Mapper;
+using StbImageSharp;
 using System.Diagnostics;
+using System.IO;
 
 namespace OvenTK.Lib;
 /// <summary>
@@ -7,7 +9,7 @@ namespace OvenTK.Lib;
 /// </summary>
 /// <remarks>It is a 'sampler2D' texture</remarks>
 [DebuggerDisplay("{Handle}:{Width}/{Height}")]
-public class Texture : IDisposable
+public class Texture : IDisposable, IImageInfo
 {
     internal const int _mipDefault = 4;
     private bool _disposed;
@@ -71,10 +73,10 @@ public class Texture : IDisposable
     /// <summary>
     /// Create texture from stream
     /// </summary>
-    /// <param name="stream"></param>
+    /// <param name="image"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture CreateFrom(Stream stream, int mipLevels = _mipDefault)
+    public static Texture CreateFrom(Stream image, int mipLevels = _mipDefault, bool flipY = true)
     {
         // Generate handle
         GL.CreateTextures(TextureTarget.Texture2D, 1, out int handle);
@@ -84,14 +86,7 @@ public class Texture : IDisposable
         //GL.ActiveTexture(TextureUnit.Texture0 + textureUnit);
         //GL.BindTexture(TextureTarget.Texture2D, handle);
 
-        // For this example, we're going to use .NET's built-in System.Drawing library to load textures.
-
-        // OpenGL has it's texture origin in the lower left corner instead of the top left corner,
-        // so we tell StbImageSharp to flip the image when loading.
-        StbImage.stbi_set_flip_vertically_on_load(1);
-
-        // Here we open a stream to the file and pass it to StbImageSharp to load.
-        var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+        var imageResult = image.LoadImage(flipY);
 
         // Now that our pixels are prepared, it's time to generate a texture. We do this with GL.TexImage2D.
         // Arguments:
@@ -105,8 +100,8 @@ public class Texture : IDisposable
         //   Data type of the pixels.
         //   And finally, the actual pixels.
         //GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
-        GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, image.Width, image.Height);
-        GL.TextureSubImage2D(handle, 0, 0, 0, image.Width, image.Height, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
+        GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, imageResult.Width, imageResult.Height);
+        GL.TextureSubImage2D(handle, 0, 0, 0, imageResult.Width, imageResult.Height, PixelFormat.Rgba, PixelType.UnsignedByte, imageResult.Data);
 
         // Now that our texture is loaded, we can set a few settings to affect how the image appears on rendering.
 
@@ -132,7 +127,30 @@ public class Texture : IDisposable
         // Here is an example of mips in action https://en.wikipedia.org/wiki/File:Mipmap_Aliasing_Comparison.png
         GL.GenerateTextureMipmap(handle);
 
-        return new Texture(handle, image.Width, image.Height);
+        return new Texture(handle, imageResult.Width, imageResult.Height);
+    }
+
+    /// <summary>
+    /// Helper method to pack images onto texture
+    /// </summary>
+    /// <param name="textures"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="mipLevels"></param>
+    /// <returns></returns>
+    public static Texture CreateFrom(IEnumerable<(int x, int y, ImageResult texture)> textures, int width, int height, int mipLevels = _mipDefault)
+    {
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out int handle);
+        GL.TextureParameter(handle, TextureParameterName.TextureMaxLevel, mipLevels);
+        GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, width, height);
+        foreach (var (x, y, texture) in textures)
+            GL.TextureSubImage2D(handle, 0, x, y, texture.Width, texture.Height, PixelFormat.Rgba, PixelType.UnsignedByte, texture.Data);
+        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.TextureParameter(handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+        GL.TextureParameter(handle, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+        GL.GenerateTextureMipmap(handle);
+        return new Texture(handle, width, height);
     }
 
     /// <summary>
