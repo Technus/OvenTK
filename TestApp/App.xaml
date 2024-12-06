@@ -2,7 +2,10 @@
     x:Class="OvenTK.TestApp.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:OvenTK.TestApp"
-    StartupUri="MainWindow.xaml">
-    <Application.Resources />
+    xmlns:local="clr-namespace:OvenTK.TestApp">
+    <Application.Resources>
+        <DataTemplate DataType="{x:Type local:MainViewModel}">
+            <local:MainView/>
+        </DataTemplate>
+    </Application.Resources>
 </Application>

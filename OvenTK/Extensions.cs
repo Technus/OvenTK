@@ -5,9 +5,21 @@ namespace OvenTK.Lib;
 
 public static class Extensions
 {
-    public static void EnableDebug()
+    public static void EnableDebug(bool throwErrors = true)
     {
         static unsafe void OnDebugMessage(
+            DebugSource source,     // Source of the debugging message.
+            DebugType type,         // Type of the debugging message.
+            int id,                 // ID associated with the message.
+            DebugSeverity severity, // Severity of the message.
+            int length,             // Length of the string in pMessage.
+            IntPtr pMessage,        // Pointer to message string.
+            IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
+        {
+            var str = Encoding.UTF8.GetString((byte*)pMessage, length);
+            Debug.WriteLine($"{source}:{type}:{id}:{severity}:{str}");
+        }
+        static unsafe void OnDebugMessageThrowing(
             DebugSource source,     // Source of the debugging message.
             DebugType type,         // Type of the debugging message.
             int id,                 // ID associated with the message.
@@ -23,7 +35,7 @@ public static class Extensions
         }
 
         GL.Enable(EnableCap.DebugOutput);
-        GL.DebugMessageCallback(OnDebugMessage, default);
+        GL.DebugMessageCallback(throwErrors ? OnDebugMessageThrowing : OnDebugMessage, default);
     }
 
     public static int SizeOf<T>(this ReadOnlySpan<T> arr) => arr.Length * Unsafe.SizeOf<T>();
