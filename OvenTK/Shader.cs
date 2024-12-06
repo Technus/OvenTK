@@ -15,6 +15,8 @@ public class Shader : IDisposable
         Handle = handle;
     }
 
+    public static implicit operator int(Shader? data) => data?.Handle ?? default;
+    
     public int Handle { get; private set; }
 
     public IReadOnlyDictionary<string, int> UniformLocations

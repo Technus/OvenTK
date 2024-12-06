@@ -3,7 +3,7 @@
 namespace OvenTK.Lib;
 
 [DebuggerDisplay("{Handle}:{Size}:{Hint}")]
-public class BufferData : IDisposable
+public class BufferData : BufferBase, IDisposable
 {
     private const BufferUsageHint _default = BufferUsageHint.StaticDraw;
     private bool _disposed;
@@ -15,13 +15,9 @@ public class BufferData : IDisposable
         Hint = hint;
     }
 
-    public static implicit operator int(BufferData data) => data.Handle;
-
-    public int Handle { get; protected set; }
-    public int Size { get; protected set; }
     public BufferUsageHint Hint { get; protected set; }
 
-    public void Resize(int size)
+    public override void Resize(int size)
     {
         Size = size;
         GL.NamedBufferData(Handle, size, default, Hint);

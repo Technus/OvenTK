@@ -9,7 +9,7 @@ public class Sampler : IDisposable
         Handle = handle;
     }
 
-    public static implicit operator int(Sampler data) => data.Handle;
+    public static implicit operator int(Sampler? data) => data?.Handle ?? default;
 
     public int Handle { get; protected set; }
 

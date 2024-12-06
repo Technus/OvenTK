@@ -3,7 +3,6 @@ using System.Windows;
 using System.Drawing;
 using OvenTK.Lib;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 
 namespace OvenTK.TestApp;
 /// <summary>
@@ -20,6 +19,10 @@ public partial class MainWindow : Window
             MajorVersion = 3,
             MinorVersion = 0,
         });
+
+#if DEBUG
+        Extensions.EnableDebug();
+#endif
 
         DataSetup();
         GLSetup();
@@ -82,27 +85,16 @@ public partial class MainWindow : Window
             BufferData.CreateFrom(_values),
         ];
 
-        _vao = VertexArray.Create();
+        _vao = VertexArray.Create(_buffers[1], [
+                VertexArrayAttrib.Create(_buffers[0], 2, VertexAttribType.Float, sizeof(float)*2, false),
+                VertexArrayAttrib.Create(_buffers[2], 16, VertexAttribType.Float, sizeof(float)*2, false),
+                VertexArrayAttrib.Create(_buffers[4], 1, VertexAttribType.UnsignedInt, sizeof(uint), false, 1),
+        ]);
 
-        GL.EnableVertexArrayAttrib(_vao, 0);
-        GL.VertexArrayAttribFormat(_vao, 0, 2, VertexAttribType.Float, false, 0);
-        GL.VertexArrayAttribBinding(_vao, 0, 0);
-        GL.VertexArrayVertexBuffer(_vao, 0, _buffers[0], default, sizeof(float) * 2);
-        GL.VertexArrayElementBuffer(_vao, _buffers[1]);
-
-        GL.EnableVertexArrayAttrib(_vao, 1);
-        GL.VertexArrayAttribFormat(_vao, 1, 16, VertexAttribType.Float, false, 0);
-        GL.VertexArrayAttribBinding(_vao, 1, 1);
-        GL.VertexArrayVertexBuffer(_vao, 1, _buffers[2], default, sizeof(float) * 16);
-        GL.VertexArrayBindingDivisor(_vao, 1, 1);
+        _texture = Texture.CreateFrom(Properties.Resources.tower1);
+        _texture.Use(0);
 
         GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _buffers[3]);
-
-        GL.EnableVertexArrayAttrib(_vao, 2);
-        GL.VertexArrayAttribFormat(_vao, 2, 1, VertexAttribType.UnsignedInt, false, 0);
-        GL.VertexArrayAttribBinding(_vao, 2, 2);
-        GL.VertexArrayVertexBuffer(_vao, 2, _buffers[4], default, sizeof(uint));
-        GL.VertexArrayBindingDivisor(_vao, 2, 1);
 
         _shader = Shader.LoadFromText(
           $$"""
@@ -155,9 +147,6 @@ public partial class MainWindow : Window
           FragColor = vec4(eggNog.rgb, 1.0);
       }
       """);
-
-        _texture = Texture.CreateFrom(Properties.Resources.tower1);
-        _texture.Use(0);
     }
 
     private void GLWpfControl_Render(TimeSpan obj)
