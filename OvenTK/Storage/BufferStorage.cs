@@ -101,6 +101,17 @@ public class BufferStorage : BufferBase, IDisposable
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
     /// <returns></returns>
+    public static BufferStorage CreateFrom<V>(Memory<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) =>
+        CreateFrom(ref memory, hint, drawType);
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
     public static unsafe BufferStorage CreateFrom<V>(ref readonly Memory<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone)
     {
         GL.CreateBuffers(1, out int handle);
@@ -109,6 +120,17 @@ public class BufferStorage : BufferBase, IDisposable
         GL.NamedBufferStorage(handle, size, (nint)pin.Pointer, hint);
         return new(handle, size, hint, GetDrawType<V>(drawType));
     }
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
+    public static BufferStorage CreateFrom<V>(ReadOnlyMemory<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) =>
+        CreateFrom(ref memory, hint, drawType);
 
     /// <summary>
     /// Creates Buffer with data from <paramref name="memory"/>
@@ -135,6 +157,17 @@ public class BufferStorage : BufferBase, IDisposable
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
     /// <returns></returns>
+    public static BufferStorage CreateFrom<V>(Span<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct =>
+        CreateFrom(ref memory, hint, drawType);
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
     public static unsafe BufferStorage CreateFrom<V>(ref readonly Span<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
@@ -152,6 +185,17 @@ public class BufferStorage : BufferBase, IDisposable
     /// <param name="hint"></param>
     /// <param name="drawType"></param>
     /// <returns></returns>
+    public static BufferStorage CreateFrom<V>(ReadOnlySpan<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct =>
+        CreateFrom(ref memory, hint, drawType);
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
     public static unsafe BufferStorage CreateFrom<V>(ref readonly ReadOnlySpan<V> memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
@@ -160,6 +204,17 @@ public class BufferStorage : BufferBase, IDisposable
             GL.NamedBufferStorage(handle, size, (nint)p, hint);
         return new(handle, size, hint, GetDrawType<V>(drawType));
     }
+
+    /// <summary>
+    /// Creates Buffer with data from <paramref name="memory"/>
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="memory"></param>
+    /// <param name="hint"></param>
+    /// <param name="drawType"></param>
+    /// <returns></returns>
+    public static BufferStorage CreateFrom<V>(V memory, BufferStorageFlags hint = _default, DrawElementsType drawType = _drawTypeNone) where V : struct =>
+        CreateFrom(ref memory, hint, drawType);
 
     /// <summary>
     /// Creates Buffer with data from <paramref name="memory"/>

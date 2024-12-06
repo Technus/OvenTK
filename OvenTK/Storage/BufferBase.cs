@@ -87,6 +87,16 @@ public abstract class BufferBase
     /// <param name="value"></param>
     /// <param name="writeOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
+    public void Write<V>(Memory<V> value, nint writeOffset = default) where V : struct =>
+        Write(ref value, writeOffset);
+
+    /// <summary>
+    /// Copy the memory to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
     public unsafe void Write<V>(ref readonly Memory<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
@@ -95,6 +105,16 @@ public abstract class BufferBase
         using var pin = value.Pin();
         GL.NamedBufferSubData(Handle, writeOffset, size, (nint)pin.Pointer);
     }
+
+    /// <summary>
+    /// Copy the memory to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public void Write<V>(ReadOnlyMemory<V> value, nint writeOffset = default) where V : struct => 
+        Write(ref value, writeOffset);
 
     /// <summary>
     /// Copy the memory to the selected position
@@ -119,6 +139,16 @@ public abstract class BufferBase
     /// <param name="value"></param>
     /// <param name="writeOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
+    public void Write<V>(Span<V> value, nint writeOffset = default) where V : struct =>
+        Write(ref value, writeOffset);
+
+    /// <summary>
+    /// Copy the span to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
     public unsafe void Write<V>(ref readonly Span<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
@@ -135,6 +165,16 @@ public abstract class BufferBase
     /// <param name="value"></param>
     /// <param name="writeOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
+    public void Write<V>(ReadOnlySpan<V> value, nint writeOffset = default) where V : struct =>
+        Write(ref value, writeOffset);
+
+    /// <summary>
+    /// Copy the span to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
     public unsafe void Write<V>(ref readonly ReadOnlySpan<V> value, nint writeOffset = default) where V : struct
     {
         var size = value.SizeOf();
@@ -143,6 +183,16 @@ public abstract class BufferBase
         fixed (V* p = value)
             GL.NamedBufferSubData(Handle, writeOffset, size, (nint)p);
     }
+
+    /// <summary>
+    /// Copy the value to the selected position
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="writeOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public void Write<V>(V value, nint writeOffset = default) where V : struct =>
+        Write(ref value, writeOffset);
 
     /// <summary>
     /// Copy the value to the selected position
@@ -228,6 +278,16 @@ public abstract class BufferBase
     /// <param name="value"></param>
     /// <param name="readOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
+    public void Read<V>(Memory<V> value, nint readOffset = default) where V : struct =>
+        Read(ref value, readOffset);
+
+    /// <summary>
+    /// Read to memory
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="readOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
     public unsafe void Read<V>(ref readonly Memory<V> value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
@@ -244,6 +304,16 @@ public abstract class BufferBase
     /// <param name="value"></param>
     /// <param name="readOffset">in bytes</param>
     /// <exception cref="InvalidOperationException"></exception>
+    public void Read<V>(Span<V> value, nint readOffset = default) where V : struct =>
+        Read(ref value, readOffset);
+
+    /// <summary>
+    /// Read to span
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="readOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
     public unsafe void Read<V>(ref readonly Span<V> value, nint readOffset = default) where V : struct
     {
         var size = value.SizeOf();
@@ -252,6 +322,16 @@ public abstract class BufferBase
         fixed (V* p = value)
             GL.GetNamedBufferSubData(Handle, readOffset, size, (nint)p);
     }
+
+    /// <summary>
+    /// Read value
+    /// </summary>
+    /// <typeparam name="V"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="readOffset">in bytes</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public void Read<V>(V value, nint readOffset = default) where V : struct =>
+        Read(ref value, readOffset);
 
     /// <summary>
     /// Read value
@@ -428,11 +508,11 @@ public abstract class BufferBase
         /// <summary>
         /// Helper to get span of this mapping
         /// </summary>
-        public Span<T> Span => Pointer.AsSpan<T>(Buffer.Size);
+        public Span<T> Span => Pointer.AsSpanUnsafe<T>(Buffer.Size);
         /// <summary>
         /// Helper to get read only span of this mapping
         /// </summary>
-        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Buffer.Size);
+        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpanUnsafe<T>(Buffer.Size);
 
         /// <summary>
         /// Cast to Range mapping using whole range
@@ -443,12 +523,12 @@ public abstract class BufferBase
         /// Cast to span using whole range
         /// </summary>
         /// <param name="map"></param>
-        public static implicit operator Span<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator Span<T>(Mapping<T> map) => map.Pointer.AsSpanUnsafe<T>(map.Buffer.Size);
         /// <summary>
         /// Cast to read only span using whole range
         /// </summary>
         /// <param name="map"></param>
-        public static implicit operator ReadOnlySpan<T>(Mapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator ReadOnlySpan<T>(Mapping<T> map) => map.Pointer.AsReadOnlySpanUnsafe<T>(map.Buffer.Size);
     }
 
     /// <summary>
@@ -501,22 +581,22 @@ public abstract class BufferBase
         /// <summary>
         /// Helper to get span of this mapping
         /// </summary>
-        public Span<T> Span => Pointer.AsSpan<T>(Size);
+        public Span<T> Span => Pointer.AsSpanUnsafe<T>(Size);
         /// <summary>
         /// Helper to get read only span of this mapping
         /// </summary>
-        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpan<T>(Size);
+        public ReadOnlySpan<T> ReadOnlySpan => Pointer.AsReadOnlySpanUnsafe<T>(Size);
 
         /// <summary>
         /// Cast to span using this range
         /// </summary>
         /// <param name="map"></param>
-        public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator Span<T>(RangeMapping<T> map) => map.Pointer.AsSpanUnsafe<T>(map.Buffer.Size);
         /// <summary>
         /// Cast to read only span using this range
         /// </summary>
         /// <param name="map"></param>
-        public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsSpan<T>(map.Buffer.Size);
+        public static implicit operator ReadOnlySpan<T>(RangeMapping<T> map) => map.Pointer.AsReadOnlySpanUnsafe<T>(map.Buffer.Size);
     }
 
     /// <summary>

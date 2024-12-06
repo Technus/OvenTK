@@ -114,7 +114,7 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this nint p, int bytes) where T : struct =>
+    public static unsafe Span<T> AsSpanUnsafe<T>(this nint p, int bytes) where T : struct =>
         new((void*)p, bytes / sizeof(T));
 
     /// <summary>
@@ -123,7 +123,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this Span<byte> data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this Span<byte> data) where T : struct
     {
         fixed (byte* ptr = data)
             return new(ptr, data.Length / sizeof(T));
@@ -135,7 +135,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this byte[] data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this byte[] data) where T : struct
     {
         fixed (byte* ptr = data)
             return new(ptr, data.Length / sizeof(T));
@@ -147,7 +147,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this T[] data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this T[] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -159,7 +159,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this T[,] data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this T[,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -171,7 +171,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this T[,,] data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this T[,,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -183,7 +183,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe Span<T> AsSpan<T>(this T[,,,] data) where T : struct
+    public static unsafe Span<T> AsSpanUnsafe<T>(this T[,,,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -196,7 +196,7 @@ public static partial class Extensions
     /// <param name="p"></param>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this nint p, int bytes) where T : struct =>
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this nint p, int bytes) where T : struct =>
         new((void*)p, bytes / sizeof(T));
 
     /// <summary>
@@ -205,7 +205,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this Span<byte> data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this Span<byte> data) where T : struct
     {
         fixed (byte* ptr = data)
             return new(ptr, data.Length / sizeof(T));
@@ -217,7 +217,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this ReadOnlySpan<byte> data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this ReadOnlySpan<byte> data) where T : struct
     {
         fixed (byte* ptr = data)
             return new(ptr, data.Length / sizeof(T));
@@ -229,7 +229,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this byte[] data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this byte[] data) where T : struct
     {
         fixed (byte* ptr = data)
             return new(ptr, data.Length / sizeof(T));
@@ -241,7 +241,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this T[] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -253,7 +253,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,] data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this T[,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -265,7 +265,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,] data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this T[,,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
@@ -277,7 +277,7 @@ public static partial class Extensions
     /// <typeparam name="T"></typeparam>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,,] data) where T : struct
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpanUnsafe<T>(this T[,,,] data) where T : struct
     {
         fixed (T* ptr = data)
             return new(ptr, data.Length);
