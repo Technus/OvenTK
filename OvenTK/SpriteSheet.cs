@@ -334,6 +334,10 @@ public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvert
     /// <param name="maxMipLevels"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault) =>
-        new(SpriteSheet.CreateFrom(images,mapper,maxMipLevels));
+    public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    {
+        using var sheet = SpriteSheet.CreateFrom(images, mapper, maxMipLevels);
+        sheet._disposedValue = true;//To prevent GC of resources passed to clone
+        return new(sheet);
+    }
 }
