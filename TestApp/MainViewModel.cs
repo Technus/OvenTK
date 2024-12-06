@@ -18,21 +18,22 @@ public class MainViewModel : DependencyObject
         -0.5f,-0.5f,
         -0.5f,0.5f,
     ];
-    private readonly ushort[] _indices =
+    private readonly byte[] _indices =
     [
         0,1,2,
         0,2,3,
     ];
-    private const int _count = 12_000_000;
+    private const int _count = 100_000;
     private const int _cpus = 4;
     private readonly TripleBufferSimple<Vector4[][]> _triple = new(()=>[new Vector4[_count], new Vector4[_count]]);
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct EggNog(float egg, float nog, float eggNog)
     {
-        public Vector3 color = new(egg, nog, eggNog);
         public Matrix4 projection = Matrix4.Identity;
         public Matrix4 view = Matrix4.Identity;
+        public Vector3 color = new(egg, nog, eggNog);
+        public float count = _count;
     }
     private EggNog _uniform = new(0.1f, 0.3f, 0.8f);
 
@@ -102,7 +103,7 @@ public class MainViewModel : DependencyObject
 
                 await Task.WhenAll(tasks);
             }
-            //else await Task.Delay(10);
+            await Task.Delay(10);
 
             var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
             Debug.WriteLine($"Tick Time {td}");
@@ -153,7 +154,7 @@ public class MainViewModel : DependencyObject
                 memcpy((nint)dest, (nint)src, _count);
         }
         */
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedShort, default, _count);
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _buffers[1].DrawCount, _buffers[1].DrawType, default, _count);
         //sync.WaitClient();
 
         var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
@@ -163,6 +164,8 @@ public class MainViewModel : DependencyObject
     private void GLSetup()
     {
         GL.ClearColor(Color.LightGray);
+        GL.Disable(EnableCap.DepthTest);
+        GL.DepthFunc(DepthFunction.Less);
 
         _buffers = [
             BufferStorage.CreateFrom(_vertices),
