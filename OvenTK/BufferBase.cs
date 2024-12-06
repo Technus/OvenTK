@@ -2,7 +2,8 @@
 
 public abstract class BufferBase
 {
-    protected const DrawElementsType _drawTypeNone = default;
+    internal const DrawElementsType _drawTypeNone = default;
+
     protected DrawElementsType _drawElementsType = _drawTypeNone;
 
     public int Handle { get; protected set; }

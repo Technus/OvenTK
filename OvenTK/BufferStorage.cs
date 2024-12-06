@@ -5,7 +5,8 @@ namespace OvenTK.Lib;
 [DebuggerDisplay("{Handle}:{Size}:{Flags}")]
 public class BufferStorage : BufferBase, IDisposable
 {
-    private const BufferStorageFlags _default = BufferStorageFlags.None;
+    internal const BufferStorageFlags _default = BufferStorageFlags.None;
+
     private bool _disposed;
 
     public BufferStorageFlags Flags { get; protected set; }

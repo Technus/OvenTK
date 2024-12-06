@@ -14,13 +14,15 @@ public readonly struct Shader(int handle) : IDisposable
 
     public static async Task<Shader> CreateFromAsync(ShaderType type, Stream shader, Encoding encoding = default!)
     {
-        using var streamReader = new StreamReader(shader, encoding ?? Encoding.UTF8);
+        using var stream = shader;
+        using var streamReader = new StreamReader(stream, encoding ?? Encoding.UTF8);
         return CreateFrom(type, await streamReader.ReadToEndAsync());
     }
 
     public static Shader CreateFrom(ShaderType type, Stream shader, Encoding encoding = default!)
     {
-        using var streamReader = new StreamReader(shader, encoding ?? Encoding.UTF8);
+        using var stream = shader;
+        using var streamReader = new StreamReader(stream, encoding ?? Encoding.UTF8);
         return CreateFrom(type, streamReader.ReadToEnd());
     }
 

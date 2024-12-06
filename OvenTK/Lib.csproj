@@ -26,8 +26,8 @@
 		<Otherwise>
 			<ItemGroup>
 				<PackageReference Include="OpenTK" Version="3.3.3" />
-				<PackageReference Include="System.Memory" Version="4.5.5" />
-				<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+				<PackageReference Include="System.Memory" Version="4.6.0" />
+				<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
 				<Using Include="OpenTK" />
 			</ItemGroup>
 		</Otherwise>

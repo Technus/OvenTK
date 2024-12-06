@@ -8,7 +8,7 @@ namespace OvenTK.Lib;
 [DebuggerDisplay("{Handle}:{Width}/{Height}")]
 public class Texture : IDisposable
 {
-    private const int _mipDefault = 4;
+    internal const int _mipDefault = 4;
     private bool _disposed;
 
     public int Handle { get; private set; }

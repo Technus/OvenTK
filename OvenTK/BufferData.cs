@@ -5,7 +5,8 @@ namespace OvenTK.Lib;
 [DebuggerDisplay("{Handle}:{Size}:{Hint}")]
 public class BufferData : BufferBase, IDisposable
 {
-    private const BufferUsageHint _default = BufferUsageHint.StaticDraw;
+    internal const BufferUsageHint _default = BufferUsageHint.StaticDraw;
+
     private bool _disposed;
 
     public BufferUsageHint Hint { get; protected set; }

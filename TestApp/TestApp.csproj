@@ -33,11 +33,15 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <None Remove="Resources\consolas32.fnt" />
+	  <None Remove="Resources\consolas32_0.png" />
 	  <None Remove="Resources\digit.frag" />
 	  <None Remove="Resources\digit.vert" />
 	  <None Remove="Resources\digits.png" />
 	  <None Remove="Resources\test.frag" />
 	  <None Remove="Resources\test.vert" />
+	  <None Remove="Resources\text.frag" />
+	  <None Remove="Resources\text.vert" />
 	</ItemGroup>
 
 	<ItemGroup>
