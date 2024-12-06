@@ -1,4 +1,4 @@
-﻿namespace OvenTK.OvenTK;
+﻿namespace OvenTK.Lib;
 
 public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) : IDisposable
 {
@@ -74,7 +74,7 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        fixed (void* p = memory)
+        fixed (V* p = memory)
             GL.NamedBufferStorage(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
@@ -83,16 +83,17 @@ public class BufferStorage(int handle, int byteSize, BufferStorageFlags flags) :
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        fixed (void* p = memory)
+        fixed (V* p = memory)
             GL.NamedBufferStorage(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
 
-    public static BufferStorage CreateFrom<V>(V memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
+    public static unsafe BufferStorage CreateFrom<V>(ref readonly V memory, BufferStorageFlags hint = BufferStorageFlags.None) where V : struct
     {
         GL.CreateBuffers(1, out int handle);
         var size = memory.SizeOf();
-        GL.NamedBufferStorage(handle, size, ref memory, hint);
+        fixed (V* p = &memory)
+            GL.NamedBufferStorage(handle, size, (nint)p, hint);
         return new(handle, size, hint);
     }
 

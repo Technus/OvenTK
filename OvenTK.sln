@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{EFD3F113-4F13-4021-936B-B7825E8135C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OvenTK", "OvenTK\OvenTK.csproj", "{CD333F68-2604-4C48-8858-0296D0C3C0A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lib", "OvenTK\Lib.csproj", "{CD333F68-2604-4C48-8858-0296D0C3C0A5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6F0140BB-6D30-458F-84F9-03CD64BF9544}"
 	ProjectSection(SolutionItems) = preProject
