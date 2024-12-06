@@ -313,7 +313,7 @@ public abstract class BufferBase
     /// <param name="length"></param>
     /// <param name="bufferAccess"></param>
     /// <returns></returns>
-    public RangeMapping<T> Map<T>(nint offset, int length, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
+    public RangeMapping<T> MapRange<T>(nint offset, int length, BufferAccessMask bufferAccess = BufferAccessMask.MapReadBit | BufferAccessMask.MapWriteBit) where T : struct
     {
         var p = GL.MapNamedBufferRange(Handle, offset, length, bufferAccess);
         return new(this, p, offset, length);

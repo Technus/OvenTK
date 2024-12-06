@@ -97,12 +97,14 @@ public class ShaderProgram : IDisposable
     /// The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
     /// A commented example of GLSL can be found in shader.vert.
     /// </summary>
-    /// <param name="vert">vertex shader source</param>
-    /// <param name="frag">fragment shader source</param>
+    /// <param name="vertStream">vertex shader source</param>
+    /// <param name="fragStream">fragment shader source</param>
     /// <param name="encoding"></param>
     /// <returns></returns>
-    public static async Task<ShaderProgram> CreateFromAsync(Stream vert, Stream frag, Encoding encoding = default!)
+    public static async Task<ShaderProgram> CreateFromAsync(Stream vertStream, Stream fragStream, Encoding encoding = default!)
     {
+        using var vert = vertStream;
+        using var frag = fragStream;
         encoding ??= Encoding.UTF8;
         using var vertReader = new StreamReader(vert, encoding);
         using var fragReader = new StreamReader(frag, encoding);

@@ -6,18 +6,29 @@
     xmlns:gl="clr-namespace:OpenTK.Wpf;assembly=GLWpfControl"
     xmlns:local="clr-namespace:OvenTK.TestApp"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    d:DataContext="{d:DesignInstance local:MainViewModel, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance local:MainViewModel,
+                                     IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
     <Grid>
-        <gl:GLWpfControl x:Name="GLWpfControl"
-                         HorizontalAlignment="Stretch"
-                         VerticalAlignment="Stretch"/>
+        <gl:GLWpfControl
+            x:Name="GLWpfControl"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
         <StackPanel Orientation="Vertical">
-            <Slider Value="{Binding X}" Minimum="-4000" Maximum="4000"/>
-            <Slider Value="{Binding Y}" Minimum="-4000" Maximum="4000"/>
-            <Slider Value="{Binding ScaleLog}" Minimum="-1.2" Maximum="0"/>
+            <Slider
+                Maximum="4000"
+                Minimum="-4000"
+                Value="{Binding X}" />
+            <Slider
+                Maximum="4000"
+                Minimum="-4000"
+                Value="{Binding Y}" />
+            <Slider
+                Maximum="0"
+                Minimum="-1.2"
+                Value="{Binding ScaleLog}" />
             <Label
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"

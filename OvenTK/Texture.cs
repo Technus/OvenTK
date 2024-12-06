@@ -1,6 +1,7 @@
 ﻿using Mapper;
 using StbImageSharp;
 using System.Diagnostics;
+using System.Xml.Serialization;
 
 namespace OvenTK.Lib;
 /// <summary>
@@ -8,15 +9,11 @@ namespace OvenTK.Lib;
 /// </summary>
 /// <remarks>It is a 'sampler2D' texture</remarks>
 [DebuggerDisplay("{Handle}:{Width}/{Height}")]
-public class Texture : IDisposable, IImageInfo
+public class Texture : TextureBase, IDisposable, IImageInfo
 {
     internal const int _mipDefault = 4;
     private bool _disposed;
 
-    /// <summary>
-    /// OpenGL Handle
-    /// </summary>
-    public int Handle { get; private set; }
     /// <summary>
     /// Texture width in px
     /// </summary>
@@ -38,12 +35,6 @@ public class Texture : IDisposable, IImageInfo
         Width = width;
         Height = height;
     }
-
-    /// <summary>
-    /// Casts to <see cref="Handle"/>
-    /// </summary>
-    /// <param name="data"></param>
-    public static implicit operator int(Texture? data) => data?.Handle ?? default;
 
     /// <summary>
     /// Create texture from <paramref name="bytes"/>
@@ -147,15 +138,6 @@ public class Texture : IDisposable, IImageInfo
         GL.GenerateTextureMipmap(handle);
         return new Texture(handle, width, height);
     }
-
-    /// <summary>
-    /// Activate texture<br/>
-    /// Multiple textures can be bound, if your shader needs more than just one.<br/>
-    /// If you want to do that, use GL.ActiveTexture to set which slot GL.BindTexture binds to.<br/>
-    /// The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
-    /// </summary>
-    /// <param name="unit"></param>
-    public void Use(int unit) => GL.BindTextureUnit(unit, Handle);
 
     /// <summary>
     /// Dispose pattern, deletes OpenGL texture

@@ -4,6 +4,7 @@ using OvenTK.Lib;
 using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Windows.Data;
 
 namespace OvenTK.TestApp;
 /// <summary>
@@ -76,17 +77,18 @@ public class MainViewModel : DependencyObject
     private static readonly Random _random = new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices, _sLineIndices;
-    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier;
+    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite, _dXYBezier, _dColorBezier, _dComputeDataIn, _dComputeDataOut;
     private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite, _vBezier, _vBezier2, _vPolyline2;
     private Texture _tDigits;
+    private TextureBuffer _bComputeTexIn, _bComputeTexOut;
     private BitmapFont _fConsolas;
     private SpriteSheet<Sprite> _sSprites;
-    private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2;
+    private ShaderProgram _pRect, _pDigits, _pText, _pSprite, _pBezier, _pBezier2, _pPolyline2, _pCompute;
     private bool _invalidated = true;
     private Uniform _uniform = new()
     {
         CameraScale = 1,
-        InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
+        InstanceCount = _count,
     };
     private TripleBufferSimple<(PosRot[] xyar, ColorARGB[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers)> _tTriple;
 
@@ -365,6 +367,11 @@ public class MainViewModel : DependencyObject
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
+        //Compute buffers
+
+        _dComputeDataIn = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
+        _dComputeDataOut = BufferData.Create(32 * 1 * 1 * 32 * 1 * 1 * Unsafe.SizeOf<float>() * 4, BufferUsageHint.DynamicRead);
+
         var textureCount = 0;
 
         //Add hacky digits texure
@@ -381,6 +388,11 @@ public class MainViewModel : DependencyObject
         _sSprites = SpriteSheet<Sprite>.CreateFrom(
             sprite => Application.GetResourceStream(new Uri(@$"\Resources\Sprites\{sprite.GetDescription()}", UriKind.Relative)).Stream);
         textureCount = _sSprites.UseBase(textureCount);
+
+        _bComputeTexIn = TextureBuffer.CreateFrom(_dComputeDataIn, SizedInternalFormat.Rgba32f);
+        _bComputeTexIn.UseImage(textureCount++, TextureAccess.ReadOnly, SizedInternalFormat.Rgba32f);
+        _bComputeTexOut = TextureBuffer.CreateFrom(_dComputeDataOut, SizedInternalFormat.Rgba32f);
+        _bComputeTexOut.UseImage(textureCount++, TextureAccess.WriteOnly, SizedInternalFormat.Rgba32f);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
 
@@ -414,17 +426,13 @@ public class MainViewModel : DependencyObject
 
         //Triple buffer for data writing
         _tTriple = new(() => (
-                new PosRot[_count], 
-                new ColorARGB[_count], 
+                new PosRot[_count],
+                new ColorARGB[_count],
                 new IdProg[_count],
                 BitmapFont.MakeArray(_dXYAngleBFChar),
                 SpriteSheet.MakeArray(_dXYAngleSSSprite),
                 new CubicBezierPatch[_beziers]))
             ;//will be streamed to _d*
-
-        //a single instance data for render pipeline
-        _dUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);
-        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _dUniform);
 
         //render Input definitions
         _vBox = VertexArray.Create(_sRectIndices, [
@@ -459,7 +467,7 @@ public class MainViewModel : DependencyObject
             VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
         _vPolyline2 = VertexArray.Create(_sLineIndices, [
-            VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float,        divisor:0),
+            VertexArrayAttrib.Create(_dXYBezier,            2, VertexAttribType.Float),
             VertexArrayAttrib.Create(_dColorBezier,         4, VertexAttribType.UnsignedByte, divisor: 1, normalize:true),
         ]);
 
@@ -496,6 +504,40 @@ public class MainViewModel : DependencyObject
             Shader.CreateFrom(ShaderType.GeometryShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\polyline.geom", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\polyline2.frag", UriKind.Relative)).Stream),
         ]);
+        _pCompute = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.ComputeShader, Application.GetResourceStream(new Uri(@"\Resources\Shaders\test.comp", UriKind.Relative)).Stream),
+        ]);
+
+        //a single instance data for render pipeline
+        _dUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);
+        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, _dUniform);
+
+        Compute();
+    }
+
+    /// <summary>
+    /// Do some demo comppute
+    /// </summary>
+    public void Compute()
+    {
+        _pCompute.Use();
+        using (var write = _dComputeDataIn.Map<float>(BufferAccess.WriteOnly))
+        {
+            write.Span[4] = _random.Next(2138);
+            write.Span[5] = _random.Next(2138);
+            write.Span[6] = _random.Next(2138);
+            write.Span[7] = _random.Next(2138);
+        }
+
+        GL.DispatchCompute(32, 1, 1);//Usually best with 32 or 64 muliple
+        GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);//good for reading on GPU side?
+        
+        //using var sync = Sync.Create(SyncCondition.SyncGpuCommandsComplete);
+        //sync.WaitClient();
+
+        using var read = _dComputeDataOut.Map<float>(BufferAccess.ReadOnly);
+
+        int i = 3;
     }
 
     public void OnRender(TimeSpan t)
@@ -552,7 +594,7 @@ public class MainViewModel : DependencyObject
         if (_uniform.CameraScale >= 0.0625)//draw boxes
         {
             _pRect.Use();
-        
+
             //rect boxes
             _vBox.Use();
             _uniform.InstanceBase = _boxBase;
@@ -560,7 +602,7 @@ public class MainViewModel : DependencyObject
             _dUniform.Recreate(ref _uniform);
             GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
                 default, _boxes, _uniform.InstanceBase);
-        
+
             //square containers
             _vContainer.Use();
             _uniform.InstanceBase = _containerBase;
@@ -569,12 +611,12 @@ public class MainViewModel : DependencyObject
             GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
                 default, _containers, _uniform.InstanceBase);
         }
-        
+
         if (_uniform.CameraScale >= 0.25)//draw Id/Prog
         {
             _vDigits.Use();
             _pDigits.Use();
-            _uniform.TextureResolution = new(16,1);
+            _uniform.TextureResolution = new(16, 1);
             _uniform.InstanceBase = _base;
             _uniform.InstanceCount = _count;
 

@@ -1,0 +1,33 @@
+﻿#version 460 compatibility
+
+//in uvec3 gl_NumWorkGroups;        This variable contains the number of work groups passed to the dispatch function.
+//in uvec3 gl_WorkGroupSize;        local_size
+//in uvec3 gl_WorkGroupID;          This is the current work group for this shader invocation. Each of the XYZ components will be on the half-open range [0, gl_NumWorkGroups.XYZ).
+//in uvec3 gl_LocalInvocationID;    This is the current invocation of the shader within the work group. Each of the XYZ components will be on the half-open range [0, gl_WorkGroupSize.XYZ).
+//in uvec3 gl_GlobalInvocationID;   This value uniquely identifies this particular invocation of the compute shader among all invocations of this compute dispatch call. It's a short-hand for the math computation: gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID
+//in uint  gl_LocalInvocationIndex; This is a 1D version of gl_LocalInvocationID. It identifies this invocation's index within the work group. It is short-hand for this math computation: gl_LocalInvocationID.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y + gl_LocalInvocationID.y * gl_WorkGroupSize.x + gl_LocalInvocationID.x
+
+layout (binding = 0) uniform Uniform {
+    vec2 size;
+    vec2 texSize;
+    vec2 pos;
+    vec2 digitPos;
+    float scale;
+    uint base;
+    uint count;
+    uint digitDiv;
+    uint digitI;
+};
+
+layout (rgba32f, binding = 5) uniform restrict readonly imageBuffer srcTex;
+layout (binding = 6) uniform restrict writeonly imageBuffer destTex;
+
+layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+	float localCoef = length(vec2(ivec2(gl_LocalInvocationID.xy)-8)/8.0);
+	float globalCoef = sin(float(gl_WorkGroupID.x+gl_WorkGroupID.y)*0.1 + scale)*0.5;
+	//imageStore(destTex, int(gl_GlobalInvocationID), vec4(1.0, 2.0, 3.0, 4.0));
+    vec4 srcData = imageLoad(srcTex, int(gl_GlobalInvocationID));
+	imageStore(destTex, int(gl_GlobalInvocationID), vec4(1.0-globalCoef*localCoef, srcData.gba));
+}

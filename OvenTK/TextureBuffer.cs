@@ -7,14 +7,9 @@ namespace OvenTK.Lib;
 /// </summary>
 /// <remarks>It is a '?samplerBuffer' texture</remarks>
 [DebuggerDisplay("{Handle}")]
-public class TextureBuffer : IDisposable
+public class TextureBuffer : TextureBase, IDisposable
 {
     private bool _disposed;
-
-    /// <summary>
-    /// OpenGl handle
-    /// </summary>
-    public int Handle { get; private set; }
 
     /// <summary>
     /// Use factory methods
@@ -26,13 +21,7 @@ public class TextureBuffer : IDisposable
     }
 
     /// <summary>
-    /// Casts to <see cref="Handle"/>
-    /// </summary>
-    /// <param name="data"></param>
-    public static implicit operator int(TextureBuffer? data) => data?.Handle ?? default;
-
-    /// <summary>
-    /// 
+    /// Creates texture based on a buffer
     /// </summary>
     /// <param name="buffer"></param>
     /// <param name="format"></param>
@@ -44,15 +33,6 @@ public class TextureBuffer : IDisposable
         GL.TextureBuffer(handle, format, buffer);
         return new TextureBuffer(handle);
     }
-
-    /// <summary>
-    /// Activate texture (buffer)<br/>
-    /// Multiple textures can be bound, if your shader needs more than just one.<br/>
-    /// If you want to do that, use GL.ActiveTexture to set which slot GL.BindTexture binds to.<br/>
-    /// The OpenGL standard requires that there be at least 16, but there can be more depending on your graphics card.
-    /// </summary>
-    /// <param name="unit"></param>
-    public void Use(int unit) => GL.BindTextureUnit(unit, Handle);
 
     /// <summary>
     /// Dispose pattern, will delete the texture but not the bound buffer
