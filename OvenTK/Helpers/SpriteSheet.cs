@@ -63,9 +63,10 @@ public class SpriteSheet : IDisposable
         var imageList = new List<Pow2RectImage>();
         var minSize = int.MaxValue;
 
+        var id = 1;
         foreach (var image in images)
         {
-            var pow2RectImage = new Pow2RectImage(image.LoadImageAndDispose());
+            var pow2RectImage = new Pow2RectImage(image.LoadImageAndDispose(),id++);
             minSize = Math.Min(minSize, Math.Min(pow2RectImage.Width, pow2RectImage.Height));
             imageList.Add(pow2RectImage);
         }
@@ -73,7 +74,6 @@ public class SpriteSheet : IDisposable
         var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
 
         var data = new SpriteTex[imageList.Count + 1];//for null
-        var i = 1;
 
         mapper ??= new MapperOptimalEfficiency<Mapping>(new Canvas());
         var mapping = mapper.Mapping(imageList);
@@ -81,7 +81,7 @@ public class SpriteSheet : IDisposable
         {
             if (img.ImageInfo is not Pow2RectImage rectImg)
                 throw new InvalidOperationException("invalid image");
-            data[i++] = new((short)img.X, (short)img.Y, (short)rectImg.Width, (short)rectImg.Height);
+            data[rectImg.Id] = new((short)img.X, (short)img.Y, (short)rectImg.Width, (short)rectImg.Height);
             return (img.X, img.Y, rectImg.ImageResult);
         });
 
@@ -144,14 +144,16 @@ public class SpriteSheet : IDisposable
 
     internal sealed class Pow2RectImage : IImageInfo
     {
-        public Pow2RectImage(ImageResult texture)
+        public Pow2RectImage(ImageResult texture, int id)
         {
             ImageResult = texture;
+            Id = id;
             Width = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Width) / _log2));
             Height = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Height) / _log2));
         }
 
         public ImageResult ImageResult { get; }
+        public int Id { get; }
 
         public int Width { get; }
 
