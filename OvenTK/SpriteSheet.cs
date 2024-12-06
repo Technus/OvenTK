@@ -6,17 +6,15 @@ using System.Diagnostics;
 namespace OvenTK.Lib;
 
 /// <summary>
-/// <typeparamref name="TKey"/> should be an enum starting from 0 without gaps<br/>
-/// where 0 will be "None", max size is int/uint
+/// This sprite sheet uses integer indexing of sprites, for more convinient one use <see cref="SpriteSheet{TKey}"/>
 /// </summary>
-/// <typeparam name="TKey"></typeparam>
-public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvertible
+public class SpriteSheet : IDisposable
 {
-    private readonly Texture _texture;
-    private readonly BufferStorage _buffer;
-    private readonly TextureBuffer _texBuffer;
-    private readonly SpriteTex[] _sprites;
-    private bool _disposedValue;
+    internal readonly Texture _texture;
+    internal readonly BufferStorage _buffer;
+    internal readonly TextureBuffer _texBuffer;
+    internal readonly SpriteTex[] _sprites;
+    internal bool _disposedValue;
 
     /// <summary>
     /// Use factory method
@@ -34,20 +32,6 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     }
 
     /// <summary>
-    /// Creates sprite sheet from sprites based on enum descriptions<br/>
-    /// Using <paramref name="textureResolver"/> to map enum <see cref="DescriptionAttribute"/> to image streams
-    /// </summary>
-    /// <param name="textureResolver"></param>
-    /// <param name="mapper"></param>
-    /// <param name="maxMipLevels"></param>
-    /// <returns></returns>
-    public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
-    {
-        var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
-        return CreateFrom(values.Select(textureResolver.Invoke), mapper, maxMipLevels);
-    }
-
-    /// <summary>
     /// Creates sprite sheet from sprites based on enumeration of streams<br/>
     /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
     /// </summary>
@@ -56,7 +40,7 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <param name="maxMipLevels"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static SpriteSheet CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
     {
         var imageList = new List<Pow2RectImage>();
         var minSize = int.MaxValue;
@@ -70,7 +54,7 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
 
         var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / Extensions._log2));//this ensures no color bleed and max mipping
 
-        var data = new SpriteTex[imageList.Count+1];//for null
+        var data = new SpriteTex[imageList.Count + 1];//for null
         var i = 1;
 
         mapper ??= new MapperOptimalEfficiency<Mapping>(new Canvas());
@@ -139,14 +123,8 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <param name="id"></param>
     /// <returns></returns>
     public SpriteTex GetSprite(int id) => _sprites[id];
-    /// <summary>
-    /// Gets the sprite metadata for reference
-    /// </summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
-    public SpriteTex GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
 
-    private sealed class Pow2RectImage : IImageInfo
+    internal sealed class Pow2RectImage : IImageInfo
     {
         public Pow2RectImage(ImageResult texture)
         {
@@ -298,4 +276,64 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
+}
+
+/// <summary>
+/// <typeparamref name="TKey"/> should be an enum starting from 0 without gaps<br/>
+/// where 0 will be "None", max size is int/uint
+/// </summary>
+/// <typeparam name="TKey"></typeparam>
+public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvertible
+{
+    /// <summary>
+    /// Use factory methods
+    /// </summary>
+    /// <param name="texture"></param>
+    /// <param name="storage"></param>
+    /// <param name="buffer"></param>
+    /// <param name="sprites"></param>
+    public SpriteSheet(Texture texture, BufferStorage storage, TextureBuffer buffer, SpriteTex[] sprites) : base(texture, storage, buffer, sprites)
+    {
+    }
+
+    /// <summary>
+    /// Copy constructor
+    /// </summary>
+    /// <param name="spriteSheet"></param>
+    public SpriteSheet(SpriteSheet spriteSheet) : base(spriteSheet._texture, spriteSheet._buffer, spriteSheet._texBuffer, spriteSheet._sprites)
+    {   
+    }
+
+    /// <summary>
+    /// Gets the sprite metadata for reference
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public SpriteTex GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
+
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enum descriptions<br/>
+    /// Using <paramref name="textureResolver"/> to map enum <see cref="DescriptionAttribute"/> to image streams
+    /// </summary>
+    /// <param name="textureResolver"></param>
+    /// <param name="mapper"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
+    public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    {
+        var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
+        return CreateFrom(values.Select(textureResolver.Invoke), mapper, maxMipLevels);
+    }
+
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enumeration of streams<br/>
+    /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// </summary>
+    /// <param name="images"></param>
+    /// <param name="mapper"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault) =>
+        new(SpriteSheet.CreateFrom(images,mapper,maxMipLevels));
 }

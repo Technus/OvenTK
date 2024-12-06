@@ -346,15 +346,15 @@ public class MainViewModel : DependencyObject
         //Create 'fixed' size buffer for text
         _dXYAngleBFChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
         //Create 'fixed' size buffer for sprites
-        _dXYAngleSSSprite = SpriteSheet<Sprite>.CreateBuffer(_count * _spritesPerInstance, BufferUsageHint.DynamicDraw);
+        _dXYAngleSSSprite = SpriteSheet.CreateBuffer(_count * _spritesPerInstance, BufferUsageHint.DynamicDraw);
 
         //Triple buffer for data writing
         _tTriple = new(() => (
                 new PosRot[_count], 
                 new int[_count], 
-                new IdProg[_count], 
-                new BitmapFont.Char[BitmapFont.InstanceCount(_dXYAngleBFChar)], 
-                new SpriteSheet<Sprite>.Sprite[SpriteSheet<Sprite>.InstanceCount(_dXYAngleSSSprite)]))
+                new IdProg[_count],
+                BitmapFont.MakeArray(_dXYAngleBFChar),
+                SpriteSheet.MakeArray(_dXYAngleSSSprite)))
             ;//will be streamed to _d*
 
         //a single instance data for render pipeline
