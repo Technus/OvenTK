@@ -12,11 +12,21 @@ public class SpriteSheet : IDisposable
 {
     internal static readonly double _log2 = Math.Log(2);
 
-    internal readonly Texture _texture;
-    internal readonly BufferStorage _buffer;
-    internal readonly TextureBuffer _texBuffer;
     internal readonly SpriteTex[] _sprites;
     internal bool _disposedValue;
+
+    /// <summary>
+    /// The sprite sheet texture
+    /// </summary>
+    public Texture Texture { get; private set; }
+    /// <summary>
+    /// The buffer holding sprite positions and sizes
+    /// </summary>
+    public BufferStorage Buffer { get; private set; }
+    /// <summary>
+    /// The texture buffer holing the buffer
+    /// </summary>
+    public TextureBuffer TextureBuffer { get; private set; }
 
     /// <summary>
     /// Use factory method
@@ -27,9 +37,9 @@ public class SpriteSheet : IDisposable
     /// <param name="sprites"></param>
     public SpriteSheet(Texture texture, BufferStorage storage, TextureBuffer buffer, SpriteTex[] sprites)
     {
-        _texture = texture;
-        _buffer = storage;
-        _texBuffer = buffer;
+        Texture = texture;
+        Buffer = storage;
+        TextureBuffer = buffer;
         _sprites = sprites;
     }
 
@@ -43,32 +53,28 @@ public class SpriteSheet : IDisposable
         if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
-        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texture.Handle, -1, $"{label}:Texture");
-        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, _buffer.Handle, -1, $"{label}:BufferStorage");
-        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texBuffer.Handle, -1, $"{label}:TextureBuffer");
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, Texture.Handle, -1, $"{label}:Texture");
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Buffer.Handle, -1, $"{label}:BufferStorage");
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, TextureBuffer.Handle, -1, $"{label}:TextureBuffer");
         return this;
     }
 
     /// <summary>
-    /// Creates sprite sheet from sprites based on enumeration of streams<br/>
-    /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// Creates sprite sheet from sprites based <paramref name="imageList"/><br/>
+    /// The <paramref name="imageList"/> count should be equal to or greater than defined consecutive enums (excluding 0 value)
     /// </summary>
-    /// <param name="images"></param>
+    /// <param name="imageList"></param>
     /// <param name="mapper"></param>
     /// <param name="maxMipLevels"></param>
-    /// <returns></returns>
+    /// <returns>The sprite sheet with 0 being an empty placeholder and images from list taking next places in the <see cref="RectImage.Id"/> order starting from 1</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static SpriteSheet CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    public static SpriteSheet CreateFrom(List<RectImage> imageList, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
     {
-        var imageList = new List<Pow2RectImage>();
         var minSize = int.MaxValue;
 
-        var id = 1;
-        foreach (var image in images)
+        foreach (var image in imageList)
         {
-            var pow2RectImage = new Pow2RectImage(image.LoadImageAndDispose(),id++);
-            minSize = Math.Min(minSize, Math.Min(pow2RectImage.Width, pow2RectImage.Height));
-            imageList.Add(pow2RectImage);
+            minSize = Math.Min(minSize, Math.Min(image.Width, image.Height));
         }
 
         var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
@@ -76,12 +82,13 @@ public class SpriteSheet : IDisposable
         var data = new SpriteTex[imageList.Count + 1];//for null
 
         mapper ??= new MapperOptimalEfficiency<Mapping>(new Canvas());
+        var id = 1;
         var mapping = mapper.Mapping(imageList);
-        var mappedImages = mapping.MappedImages.Select(img =>
+        var mappedImages = mapping.MappedImages.OrderBy(img=>(img.ImageInfo as RectImage)!.Id).Select(img =>
         {
-            if (img.ImageInfo is not Pow2RectImage rectImg)
+            if (img.ImageInfo is not RectImage rectImg)
                 throw new InvalidOperationException("invalid image");
-            data[rectImg.Id] = new((short)img.X, (short)img.Y, (short)rectImg.Width, (short)rectImg.Height);
+            data[id++] = new((short)img.X, (short)img.Y, (short)rectImg.Width, (short)rectImg.Height);
             return (img.X, img.Y, rectImg.ImageResult);
         });
 
@@ -94,6 +101,29 @@ public class SpriteSheet : IDisposable
     }
 
     /// <summary>
+    /// Creates sprite sheet from sprites based on enumeration of streams in <paramref name="images"/><br/>
+    /// The <paramref name="images"/> count should be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// </summary>
+    /// <param name="images"></param>
+    /// <param name="mapper"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns>The sprite sheet with 0 being an empty placeholder and images from list taking next places starting from 1</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static SpriteSheet CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    {
+        var imageList = new List<RectImage>();
+
+        var id = 1;
+        foreach (var image in images)
+        {
+            var pow2RectImage = RectImage.CreatePow2Size(image.LoadImageAndDispose(), id++);
+            imageList.Add(pow2RectImage);
+        }
+
+        return CreateFrom(imageList, mapper, maxMipLevels);
+    }
+
+    /// <summary>
     /// Binds/Loads The sprite texture atlase and sprite data texture buffer on the <paramref name="textureUnit"/> and next ones
     /// </summary>
     /// <param name="textureUnit"></param>
@@ -101,8 +131,8 @@ public class SpriteSheet : IDisposable
     /// <remarks>Loading order is Texture and then Sprite Data</remarks>
     public int UseBase(int textureUnit)
     {
-        _texture.Use(textureUnit++);
-        _texBuffer.Use(textureUnit++);
+        Texture.Use(textureUnit++);
+        TextureBuffer.Use(textureUnit++);
         return textureUnit;
     }
 
@@ -133,7 +163,7 @@ public class SpriteSheet : IDisposable
     /// Gets the Texture atlas resolution (not normalized)
     /// </summary>
     /// <returns></returns>
-    public Vector2 GetResolution() => new(_texture.Width, _texture.Height);
+    public Vector2 GetResolution() => new(Texture.Width, Texture.Height);
 
     /// <summary>
     /// Gets the sprite metadata for reference
@@ -142,21 +172,81 @@ public class SpriteSheet : IDisposable
     /// <returns></returns>
     public SpriteTex GetSprite(int id) => _sprites[id];
 
-    internal sealed class Pow2RectImage : IImageInfo
+    /// <summary>
+    /// Returns collection of all sprites
+    /// </summary>
+    /// <returns></returns>
+    public IReadOnlyList<SpriteTex> GetSprites() => _sprites;
+
+    /// <summary>
+    /// A wrapper for image, the actual content is not positioned inside
+    /// </summary>
+    public class RectImage : IImageInfo
     {
-        public Pow2RectImage(ImageResult texture, int id)
+        /// <summary>
+        /// Wraps <paramref name="texture"/> in a box of size <paramref name="apparentHeight"/> , <paramref name="apparentHeight"/><br/>
+        /// Where the box should be at least of same size as texture
+        /// </summary>
+        /// <param name="texture"></param>
+        /// <param name="id"></param>
+        /// <param name="apparentWidth"></param>
+        /// <param name="apparentHeight"></param>
+        public RectImage(ImageResult texture, int id, int apparentWidth, int apparentHeight)
         {
             ImageResult = texture;
             Id = id;
-            Width = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Width) / _log2));
-            Height = (int)Math.Pow(2, Math.Ceiling(Math.Log(ImageResult.Height) / _log2));
+            Width = apparentWidth;
+            Height = apparentHeight;
         }
 
+        /// <summary>
+        /// Wraps the image in a matching box
+        /// </summary>
+        /// <param name="texture"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static RectImage Create(ImageResult texture, int id) =>
+            new(texture, id, texture.Width, texture.Height);
+
+        /// <summary>
+        /// Wraps the image in a smallest box of size 2^n which fits the image
+        /// </summary>
+        /// <param name="texture"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static RectImage CreatePow2Size(ImageResult texture, int id) =>
+            new(texture, id,
+                (int)Math.Pow(2, Math.Ceiling(Math.Log(texture.Width) / _log2)),
+                (int)Math.Pow(2, Math.Ceiling(Math.Log(texture.Height) / _log2)));
+
+        /// <summary>
+        /// Wraps the image in a box which is bigger by <paramref name="additionalPixels"/>
+        /// </summary>
+        /// <param name="texture"></param>
+        /// <param name="id"></param>
+        /// <param name="additionalPixels"></param>
+        /// <returns></returns>
+        public static RectImage CreateExpanded(ImageResult texture, int id, int additionalPixels = 1) =>
+            new(texture, id, texture.Width + additionalPixels, texture.Height + additionalPixels);
+
+        /// <summary>
+        /// The actual image
+        /// </summary>
         public ImageResult ImageResult { get; }
+
+        /// <summary>
+        /// Id for matching to the Sprite enum
+        /// </summary>
         public int Id { get; }
 
+        /// <summary>
+        /// The apparent width to occupy in sprite sheet
+        /// </summary>
         public int Width { get; }
 
+        /// <summary>
+        /// The apparent height to occupy in sprite sheet
+        /// </summary>
         public int Height { get; }
     }
 
@@ -276,9 +366,9 @@ public class SpriteSheet : IDisposable
                 // dispose managed state (managed objects)
             }
 
-            _texBuffer.Dispose();
-            _buffer.Dispose();
-            _texture.Dispose();
+            TextureBuffer.Dispose();
+            Buffer.Dispose();
+            Texture.Dispose();
             _disposedValue = true;
         }
     }
@@ -320,8 +410,8 @@ public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvert
     /// Copy constructor
     /// </summary>
     /// <param name="spriteSheet"></param>
-    public SpriteSheet(SpriteSheet spriteSheet) : base(spriteSheet._texture, spriteSheet._buffer, spriteSheet._texBuffer, spriteSheet._sprites)
-    {   
+    public SpriteSheet(SpriteSheet spriteSheet) : base(spriteSheet.Texture, spriteSheet.Buffer, spriteSheet.TextureBuffer, spriteSheet._sprites)
+    {
     }
 
     /// <summary>

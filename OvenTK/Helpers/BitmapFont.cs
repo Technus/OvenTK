@@ -21,13 +21,26 @@ public class BitmapFont : IDisposable
 {
     private static readonly XmlSerializer _serializer = new(typeof(Font));
 
-    private bool _disposedValue;
-    private readonly Font _font;
-    private readonly Texture[] _pages;
-    private readonly BufferStorage _buffer;
-    private readonly TextureBuffer _texBuffer;
     private readonly Dictionary<char, (ushort id, CharDef def)> _stringToGpu;
     private readonly (ushort id, CharDef def) _space;
+
+    private bool _disposedValue;
+    /// <summary>
+    /// Stires the font metadata
+    /// </summary>
+    public Font FontDefinition { get; private set; }
+    /// <summary>
+    /// Stores the font texture pages
+    /// </summary>
+    public Texture[] Textures { get; private set; }
+    /// <summary>
+    /// Stores the font glyph positions and sizes
+    /// </summary>
+    public BufferStorage Buffer { get; private set; }
+    /// <summary>
+    /// The texture buffer holing the buffer
+    /// </summary>
+    public TextureBuffer TextureBuffer { get; private set; }
 
     /// <summary>
     /// Constructor for the data structure, use <see cref="CreateFrom(Stream, Func{string, Stream}, int)"/>.
@@ -44,10 +57,10 @@ public class BitmapFont : IDisposable
         TextureBuffer texBuffer,
         Dictionary<char, (ushort id, CharDef def)> stringToGpu)
     {
-        _font = font;
-        _pages = pages;
-        _buffer = buffer;
-        _texBuffer = texBuffer;
+        FontDefinition = font;
+        Textures = pages;
+        Buffer = buffer;
+        TextureBuffer = texBuffer;
         _stringToGpu = stringToGpu;
         _space = stringToGpu[' '];
     }
@@ -61,12 +74,12 @@ public class BitmapFont : IDisposable
     {
         if (!DebugExtensions.InDebug)
             return this;
-        label ??= _font.Info!.ToString();
+        label ??= FontDefinition.Info!.ToString();
         label.EnsureASCII();
-        for (int page = 0; page < _pages.Length; page++)
-            GL.ObjectLabel(ObjectLabelIdentifier.Texture, _pages[page].Handle, -1, $"{label}:Texture:{page}");
-        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, _buffer.Handle, -1, $"{label}:BufferStorage");
-        GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texBuffer.Handle, -1, $"{label}:TextureBuffer");
+        for (int page = 0; page < Textures.Length; page++)
+            GL.ObjectLabel(ObjectLabelIdentifier.Texture, Textures[page].Handle, -1, $"{label}:Texture:{page}");
+        GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Buffer.Handle, -1, $"{label}:BufferStorage");
+        GL.ObjectLabel(ObjectLabelIdentifier.Texture, TextureBuffer.Handle, -1, $"{label}:TextureBuffer");
         return this;
     }
 
@@ -322,7 +335,7 @@ public class BitmapFont : IDisposable
         {
             if (!_stringToGpu.TryGetValue(ch, out var val))
                 val = _space;
-            var (dx, dy) = (advanceX + val.def.Xoffset, advanceY + _font.Common!.Base - (val.def.Yoffset + val.def.Height));//pre rotation, with y flip...
+            var (dx, dy) = (advanceX + val.def.Xoffset, advanceY + FontDefinition.Common!.Base - (val.def.Yoffset + val.def.Height));//pre rotation, with y flip...
             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
             dataOut[i].X = (float)(x + rdx);
             dataOut[i].Y = (float)(y + rdy);
@@ -335,7 +348,7 @@ public class BitmapFont : IDisposable
             if (ch is '\n')
             {
                 advanceX = 0;
-                advanceY += _font.Common.LineHeight;
+                advanceY += FontDefinition.Common.LineHeight;
             }
         }
         
@@ -370,7 +383,7 @@ public class BitmapFont : IDisposable
         {
             if (!_stringToGpu.TryGetValue(ch, out var val))
                 val = _space;
-            var (dx, dy) = (advance + val.def.Xoffset, _font.Common!.Base-( val.def.Yoffset+val.def.Height));//pre rotation, with y flip...
+            var (dx, dy) = (advance + val.def.Xoffset, FontDefinition.Common!.Base-( val.def.Yoffset+val.def.Height));//pre rotation, with y flip...
             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
             dataOut[i].X = (float)(x + rdx);
             dataOut[i].Y = (float)(y + rdy);
@@ -410,14 +423,14 @@ public class BitmapFont : IDisposable
     /// Helper method to judge how many pages were loaded<br/>
     /// </summary>
     /// <returns></returns>
-    public int PageCount() => _font.Pages!.Page!.Count;
+    public int PageCount() => FontDefinition.Pages!.Page!.Count;
 
     /// <summary>
     /// Gets the resolution of the selected page (not normalized)
     /// </summary>
     /// <param name="page"></param>
     /// <returns></returns>
-    public Vector2 GetPageResolution(int page = default) => new(_pages[page].Width, _pages[page].Height);
+    public Vector2 GetPageResolution(int page = default) => new(Textures[page].Width, Textures[page].Height);
 
     /// <summary>
     /// Binds/Loads The font texture atlases and font data texture buffer on the <paramref name="textureUnit"/> and next ones
@@ -427,9 +440,9 @@ public class BitmapFont : IDisposable
     /// <remarks>Loading order is Pages and then Font Data</remarks>
     public int UseBase(int textureUnit)
     {
-        foreach (var page in _pages)
+        foreach (var page in Textures)
             page.Use(textureUnit++);
-        _texBuffer.Use(textureUnit++);
+        TextureBuffer.Use(textureUnit++);
         return textureUnit;
     }
 
@@ -446,10 +459,10 @@ public class BitmapFont : IDisposable
                 // dispose managed state (managed objects)
             }
 
-            _texBuffer.Dispose();
-            _buffer.Dispose();
+            TextureBuffer.Dispose();
+            Buffer.Dispose();
 
-            foreach (var page in _pages)
+            foreach (var page in Textures)
             {
                 page.Dispose();
             }
