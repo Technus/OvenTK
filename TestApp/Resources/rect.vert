@@ -9,6 +9,7 @@ layout (location = 0) out vec4 color; //to next shader
 
 layout (binding = 0) uniform Uniform {
     vec2 size;
+    vec2 texSize;
     vec2 pos;
     vec2 digitPos;
     float scale;

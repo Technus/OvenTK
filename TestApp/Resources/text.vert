@@ -4,12 +4,13 @@
 #define _charDataSize 4
 
 layout (location = 0) in vec2 sVertice; //rectangle vertices
-layout (location = 1) in vec4 dXYAngleBMChar; //single char position, rotation and value
+layout (location = 1) in vec4 dXYAngleBFChar; //single char position, rotation and value
 
 layout (location = 0) out vec2 texurePosition; //to next shader
 
 layout (binding = 0) uniform Uniform {
     vec2 size;
+    vec2 texSize;
     vec2 pos;
     vec2 digitPos;
     float scale;
@@ -31,7 +32,7 @@ void main()
 
     //the gl_Position (clip-space output position) here must fall between [-1,1],[-1,1],[-1,1],[for normalization, usually: 1]
     
-    float w = dXYAngleBMChar[2];//get rotation in radians, then below ensure text is upright
+    float w = dXYAngleBFChar[2];//get rotation in radians, then below ensure text is upright
     w+=M_PI*1.5;
     w=float(mod(w,M_PI));
     w-=M_PI/2;
@@ -39,7 +40,7 @@ void main()
     const mat2 A = mat2(cos(w), -sin(w),
                         sin(w),  cos(w));//compute rotation matrix
     
-    const int id = int(dXYAngleBMChar[3]);//get the char id
+    const int id = int(dXYAngleBFChar[3]);//get the char id
 
     const ivec4 texCoordsForChar = texelFetch(fontData,id);//fetch texture data about char
     
@@ -50,10 +51,10 @@ void main()
                                  yFlag * texCoordsForChar[3]);//additional width/height if needed
 
     texurePosition.xy = (texCoordsForChar.xy + sVertice.xy);//add position and w/h if needed
-    texurePosition.xy /= 1024.0;//scale from texture size to normalized
+    texurePosition.xy /= texSize;//scale from texture size to normalized
 
     gl_Position = vec4(sVertice.xy * A, z, 1.0);//apply rotation matrix to the relative coords
-    gl_Position.xy += dXYAngleBMChar.xy;//move to absolute coords
+    gl_Position.xy += dXYAngleBFChar.xy;//move to absolute coords
     gl_Position.xy -= pos.xy;//move viewport
     gl_Position.xy *= viewPort.xy;//scale viewport
 }

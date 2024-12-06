@@ -66,23 +66,27 @@ public class MainViewModel : DependencyObject
     /// bitmap font renderer max text lenght per box/container
     /// </summary>
     private const int _textLen = 7;
+    /// <summary>
+    /// max amounts of sprites per box/container
+    /// </summary>
+    private const int _spritesPerInstance = 4;
 
     private static readonly Random _random = new();
 
     private BufferStorage _sBoxVertices, _sContainerVertices, _sDigitVertices, _sUnitRectVertices, _sRectIndices;
-    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBMChar;
-    private VertexArray _vBox, _vContainer, _vDigits, _vText;
+    private BufferData _dUniform, _dXYAngle, _dColor, _dIdProg, _dXYAngleBFChar, _dXYAngleSSSprite;
+    private VertexArray _vBox, _vContainer, _vDigits, _vText, _vSprite;
     private Texture _tDigits;
     private BitmapFont _fConsolas;
-    private SpriteSheet<Sprites> _sSprites;
-    private ShaderProgram _pRect, _pDigits, _pText;
+    private SpriteSheet<Sprite> _sSprites;
+    private ShaderProgram _pRect, _pDigits, _pText, _pSprite;
     private bool _invalidated = true;
     private Uniform _uniform = new()
     {
         CameraScale = 1,
         InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
     };
-    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.Char[] text)> _tTriple;
+    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet<Sprite>.Sprite[] sprites)> _tTriple;
 
     /// <summary>
     /// Box/Container position and rotation
@@ -91,7 +95,7 @@ public class MainViewModel : DependencyObject
     {
         public float X { get; set; }
         public float Y { get; set; }
-        public float Rot { get; set; }
+        public float Angle { get; set; }
     }
 
     /// <summary>
@@ -112,6 +116,10 @@ public class MainViewModel : DependencyObject
         /// Viewport resolution
         /// </summary>
         public Vector2 Resolution { get; set; }
+        /// <summary>
+        /// Texture resolution
+        /// </summary>
+        public Vector2 TextureResolution { get; set; }
         /// <summary>
         /// Position of screen center
         /// </summary>
@@ -251,7 +259,7 @@ public class MainViewModel : DependencyObject
                         {
                             X = (float)(_random.NextDouble() - 0.5) * 8000, 
                             Y = (float)(_random.NextDouble() - 0.5) * 8000, 
-                            Rot = (float)((_random.NextDouble() - 0.5) * (Math.PI)),
+                            Angle = (float)((_random.NextDouble() - 0.5) * (Math.PI)),
                         };
                         b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
                         b.cip_[j] = new IdProg { 
@@ -260,13 +268,21 @@ public class MainViewModel : DependencyObject
                         };
 
                         //Special handling for font rendering, requires precomputing the offset text start vectors
-                        var rotation = b.xyar[j].Rot;
+                        var rotation = b.xyar[j].Angle;
                         var cos = Math.Cos(rotation);
                         var sin = Math.Sin(rotation);
                         var (dx, dy) = (-59,-24);//pre rotation
                         var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
                         //then text is written to buffer array
                         _fConsolas.WriteLineTo(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X+ rdx), (float)(b.xyar[j].Y+ rdy), rotation, _random.Next(10000000).ToString().AsSpan());
+
+                        b.sprites[j * _spritesPerInstance] = new()
+                        {
+                            X = b.xyar[j].X,
+                            Y = b.xyar[j].Y,
+                            Angle = b.xyar[j].Angle,
+                            Id = (float)_random.GetRandom<Sprite>(.5f),
+                        };
                     }
                 }));
 
@@ -286,7 +302,6 @@ public class MainViewModel : DependencyObject
         GL.ClearColor(Color.Gray);
 
         //depth testing so layers dont overlap
-        GL.Enable(EnableCap.DepthTest);
         GL.DepthFunc(DepthFunction.Lequal);
 
         //blending of alpha textures like the font so transparency works
@@ -306,7 +321,8 @@ public class MainViewModel : DependencyObject
         textureCount = _fConsolas.UseBase(textureCount);
 
         //Create helper for sprite sheet
-        _sSprites = SpriteSheet<Sprites>.CreateFrom(x=> Application.GetResourceStream(new Uri(@$"\Resources\{x.GetDescription()}", UriKind.Relative)).Stream);
+        _sSprites = SpriteSheet<Sprite>.CreateFrom(
+            sprite => Application.GetResourceStream(new Uri(@$"\Resources\{sprite.GetDescription()}", UriKind.Relative)).Stream);
         textureCount = _sSprites.UseBase(textureCount);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
@@ -328,10 +344,18 @@ public class MainViewModel : DependencyObject
         _dIdProg = BufferData.Create(_count * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
 
         //Create 'fixed' size buffer for text
-        _dXYAngleBMChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
+        _dXYAngleBFChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
+        //Create 'fixed' size buffer for sprites
+        _dXYAngleSSSprite = SpriteSheet<Sprite>.CreateBuffer(_count * _spritesPerInstance, BufferUsageHint.DynamicDraw);
 
         //Triple buffer for data writing
-        _tTriple = new(() => (new PosRot[_count], new int[_count], new IdProg[_count], new BitmapFont.Char[BitmapFont.InstanceCount(_dXYAngleBMChar)]));//will be streamed to _d*
+        _tTriple = new(() => (
+                new PosRot[_count], 
+                new int[_count], 
+                new IdProg[_count], 
+                new BitmapFont.Char[BitmapFont.InstanceCount(_dXYAngleBFChar)], 
+                new SpriteSheet<Sprite>.Sprite[SpriteSheet<Sprite>.InstanceCount(_dXYAngleSSSprite)]))
+            ;//will be streamed to _d*
 
         //a single instance data for render pipeline
         _dUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);
@@ -355,7 +379,11 @@ public class MainViewModel : DependencyObject
         ]);
         _vText = VertexArray.Create(_sRectIndices, [
             VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
-            VertexArrayAttrib.Create(_dXYAngleBMChar,       4, VertexAttribType.Float,        divisor: 1),
+            VertexArrayAttrib.Create(_dXYAngleBFChar,       4, VertexAttribType.Float,        divisor: 1),
+        ]);
+        _vSprite = VertexArray.Create(_sRectIndices, [
+            VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_dXYAngleSSSprite,     4, VertexAttribType.Float,        divisor: 1),
         ]);
 
         //shader program definitions
@@ -363,15 +391,17 @@ public class MainViewModel : DependencyObject
             Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\rect.vert", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\rect.frag", UriKind.Relative)).Stream),
         ]);
-
         _pDigits = ShaderProgram.CreateFrom([
             Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\digit.vert", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\digit.frag", UriKind.Relative)).Stream),
         ]);
-
         _pText = ShaderProgram.CreateFrom([
             Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\text.vert", UriKind.Relative)).Stream),
             Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\text.frag", UriKind.Relative)).Stream),
+        ]);
+        _pSprite = ShaderProgram.CreateFrom([
+            Shader.CreateFrom(ShaderType.VertexShader, Application.GetResourceStream(new Uri(@"\Resources\sprite.vert", UriKind.Relative)).Stream),
+            Shader.CreateFrom(ShaderType.FragmentShader, Application.GetResourceStream(new Uri(@"\Resources\sprite.frag", UriKind.Relative)).Stream),
         ]);
     }
 
@@ -391,7 +421,8 @@ public class MainViewModel : DependencyObject
             _dXYAngle.Recreate(b.xyar);
             _dColor.Recreate(b.color);
             _dIdProg.Recreate(b.cip_);
-            _dXYAngleBMChar.Recreate(b.text);
+            _dXYAngleBFChar.Recreate(b.text);
+            _dXYAngleSSSprite.Recreate(b.sprites);
 
             _invalidated = true;//and invalidate
         }
@@ -399,6 +430,7 @@ public class MainViewModel : DependencyObject
         if (!_invalidated)//but actually render when invalidated otherwise keep same frame
             return;
 
+        GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);//clear screen
 
         if (_uniform.CameraScale >= 0.0625)//draw boxes
@@ -426,6 +458,7 @@ public class MainViewModel : DependencyObject
         {
             _vDigits.Use();
             _pDigits.Use();
+            _uniform.TextureResolution = new(16,1);
             _uniform.InstanceBase = _base;
             _uniform.InstanceCount = _count;
 
@@ -440,26 +473,26 @@ public class MainViewModel : DependencyObject
                     default, _count, _uniform.InstanceBase);
             }
 
-            //Prog hack is deprecated now
-            //_uniform.DigitIndex = 1;
-            //const int progDigits = 6;
-            //for (int i = 0; i < progDigits; i++)//foreach prog digit
-            //{
-            //    _uniform.DigitDiv = (int)Math.Pow(10, progDigits - i - 1);
-            //    _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, -_digitHeight / 2);
-            //    _sUniform.Recreate(ref _uniform);
-            //    GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-            //        default, _count, _uniform.InstanceBase);
-            //}
-
             //draw prog using font instead
             _vText.Use();
             _pText.Use();
+            _uniform.TextureResolution = _fConsolas.GetPageResolution();
             _uniform.InstanceBase = _base - _textLen + 1;
             _uniform.InstanceCount = _count * _textLen;
             _dUniform.Recreate(ref _uniform);
-            GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, BitmapFont.InstanceCount(_dXYAngleBMChar));
+            GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, BitmapFont.InstanceCount(_dXYAngleBFChar));
         }
+
+        GL.Disable(EnableCap.DepthTest);
+        GL.Clear(ClearBufferMask.DepthBufferBit);//new layer
+
+        _vSprite.Use();
+        _pSprite.Use();
+        _uniform.TextureResolution = _sSprites.GetResolution();
+        _uniform.InstanceBase = _base - _spritesPerInstance + 1;
+        _uniform.InstanceCount = _count * _spritesPerInstance;
+        _dUniform.Recreate(ref _uniform);
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, BitmapFont.InstanceCount(_dXYAngleSSSprite));
 
         var td = Extensions.GetElapsedTime(sw, Stopwatch.GetTimestamp());
         Debug.WriteLine($"Draw Time {td}");

@@ -2,7 +2,7 @@
 
 namespace OvenTK.TestApp;
 
-public enum Sprites
+public enum Sprite
 {
     None,
     [Description("node4.png")]

@@ -1,15 +1,12 @@
 ﻿using StbImageSharp;
-using System;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 
 namespace OvenTK.Lib;
 /// <summary>
 /// Collection of helper methods
 /// </summary>
-public static class Extensions
+public static partial class Extensions
 {
     internal static readonly double _log2 = Math.Log(2);
 
@@ -149,11 +146,32 @@ public static class Extensions
     /// <returns></returns>
     public static string GetDescription<TEnum>(this TEnum enumValue) where TEnum : struct, Enum
     {
-        var str = enumValue.ToString();
-        var memInfo = typeof(TEnum).GetMember(str);
-        if (memInfo is null || memInfo.Length is 0)
-            throw new InvalidOperationException($"Enum value: {enumValue} is no defined");
-        var attribute = memInfo[0].GetCustomAttribute<DescriptionAttribute>(false);
-        return attribute?.Description ?? throw new InvalidOperationException($"Enum value: {enumValue} has no description");
+        if (!EnumStorage<TEnum>.Descriptions.TryGetValue(enumValue, out var description))
+            throw new InvalidOperationException($"Enum value: {enumValue} is not defined");
+        if (description is null)
+            throw new InvalidOperationException($"Enum value: {enumValue} has no description");
+        return description;
+    }
+
+    public static TEnum GetRandom<TEnum>(this Random random, float zeroChance = -1) where TEnum : struct, Enum
+    {
+        var count = EnumStorage<TEnum>.EnumValuesWithoutDefault.Count;
+        if (zeroChance is -1)
+            zeroChance = 1f/(count + 1);
+
+        var randomRoll = random.NextDouble();
+        if (randomRoll < zeroChance)
+            return default;
+
+        randomRoll -= zeroChance;
+        var maxRoll = 1 - zeroChance;
+        var proportion = randomRoll / maxRoll;
+
+        if (proportion >= 1)//just in case of rounding errors
+            return EnumStorage<TEnum>.EnumValuesWithoutDefault[count - 1];
+
+        var id = (int)(proportion*count);
+
+        return EnumStorage<TEnum>.EnumValuesWithoutDefault[id];
     }
 }

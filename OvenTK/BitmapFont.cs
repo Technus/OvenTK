@@ -387,6 +387,8 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public int PageCount() => _font.Pages!.Page!.Count;
 
+    public Vector2 GetPageResolution(int page = default) => new(_pages[page].Width, _pages[page].Height);
+
     /// <summary>
     /// Binds/Loads The font texture atlases and font data texture buffer on the <paramref name="textureUnit"/> and next ones
     /// </summary>

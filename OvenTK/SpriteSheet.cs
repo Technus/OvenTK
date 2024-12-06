@@ -103,6 +103,8 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <returns></returns>
     public static Sprite[] MakeArray(BufferData data) => new Sprite[data.Size / Unsafe.SizeOf<Sprite>()];
 
+    public Vector2 GetResolution() => new(_texture.Width, _texture.Height);
+
     public SpriteTex GetSprite(int id) => _sprites[id];
 
     public SpriteTex GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
