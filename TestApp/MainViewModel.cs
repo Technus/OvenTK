@@ -74,6 +74,7 @@ public class MainViewModel : DependencyObject
     private VertexArray _vBox, _vContainer, _vDigits, _vText;
     private Texture _tDigits;
     private BitmapFont _fConsolas;
+    private SpriteSheet<Sprites> _sSprites;
     private ShaderProgram _pRect, _pDigits, _pText;
     private bool _invalidated = true;
     private Uniform _uniform = new()
@@ -81,7 +82,7 @@ public class MainViewModel : DependencyObject
         CameraScale = 1,
         InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
     };
-    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.BFChar[] text)> _tTriple;
+    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.Char[] text)> _tTriple;
 
     /// <summary>
     /// Box/Container position and rotation
@@ -304,6 +305,10 @@ public class MainViewModel : DependencyObject
             file => Application.GetResourceStream(new Uri(@$"\Resources\{file}", UriKind.Relative)).Stream);
         textureCount = _fConsolas.UseBase(textureCount);
 
+        //Create helper for sprite sheet
+        _sSprites = SpriteSheet<Sprites>.CreateFrom(x=> Application.GetResourceStream(new Uri(@$"\Resources\{x.GetDescription()}", UriKind.Relative)).Stream);
+        textureCount = _sSprites.UseBase(textureCount);
+
         Debug.WriteLine("Used texture units {0}", textureCount);
 
         //Common indices for a rectangle
@@ -326,7 +331,7 @@ public class MainViewModel : DependencyObject
         _dXYAngleBMChar = BitmapFont.CreateBufferAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
 
         //Triple buffer for data writing
-        _tTriple = new(() => (new PosRot[_count], new int[_count], new IdProg[_count], new BitmapFont.BFChar[BitmapFont.InstanceCount(_dXYAngleBMChar)]));//will be streamed to _d*
+        _tTriple = new(() => (new PosRot[_count], new int[_count], new IdProg[_count], new BitmapFont.Char[BitmapFont.InstanceCount(_dXYAngleBMChar)]));//will be streamed to _d*
 
         //a single instance data for render pipeline
         _dUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);

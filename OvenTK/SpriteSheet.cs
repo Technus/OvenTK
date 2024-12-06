@@ -14,7 +14,7 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     private readonly Texture _texture;
     private readonly BufferStorage _buffer;
     private readonly TextureBuffer _texBuffer;
-    private readonly Sprite[] _sprites;
+    private readonly SpriteTex[] _sprites;
     private bool _disposedValue;
 
     /// <summary>
@@ -24,12 +24,18 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <param name="storage"></param>
     /// <param name="buffer"></param>
     /// <param name="sprites"></param>
-    public SpriteSheet(Texture texture, BufferStorage storage, TextureBuffer buffer, Sprite[] sprites)
+    public SpriteSheet(Texture texture, BufferStorage storage, TextureBuffer buffer, SpriteTex[] sprites)
     {
         _texture = texture;
         _buffer = storage;
         _texBuffer = buffer;
         _sprites = sprites;
+    }
+
+    public static SpriteSheet<TKey> CreateFrom(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
+    {
+        var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
+        return CreateFrom(values.Select(textureResolver.Invoke), mapper, maxMipLevels);
     }
 
     public static SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture._mipDefault)
@@ -46,8 +52,8 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
 
         var mipLevels = Math.Min(maxMipLevels, (int)Math.Floor(Math.Log(minSize) / Extensions._log2));//this ensures no color bleed and max mipping
 
-        var data = new Sprite[imageList.Count];
-        var i = 0;
+        var data = new SpriteTex[imageList.Count+1];//for null
+        var i = 1;
 
         mapper ??= new MapperOptimalEfficiency<Mapping>(new Canvas());
         var mapping = mapper.Mapping(imageList);
@@ -69,14 +75,37 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
 
     public int UseBase(int textureUnit)
     {
-        GL.BindTextureUnit(textureUnit++, _texture);
-        GL.BindTextureUnit(textureUnit++, _texBuffer);
+        _texture.Use(textureUnit++);
+        _texBuffer.Use(textureUnit++);
         return textureUnit;
     }
 
-    public Sprite GetSprite(int id) => _sprites[id];
+    /// <summary>
+    /// Creates an empty buffer for GPU text, as long as it is empty it is sprite sheet agnostic, but a sprite in it would not be.
+    /// </summary>
+    /// <param name="count"></param>
+    /// <param name="hint"></param>
+    /// <returns></returns>
+    public static BufferData CreateBuffer(int count, BufferUsageHint hint) =>
+        BufferData.Create(Unsafe.SizeOf<Sprite>() * count, hint);
 
-    public Sprite GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
+    /// <summary>
+    /// Each sprite on screen is an single instance of "2 triangles (or a quad...)", this helps to compute how much instances are to be rendered from <paramref name="data"/>
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static int InstanceCount(BufferData data) => data.Size / Unsafe.SizeOf<Sprite>();
+
+    /// <summary>
+    /// Makes a <see cref="Sprite"/> array the size of <paramref name="data"/>.
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static Sprite[] MakeArray(BufferData data) => new Sprite[data.Size / Unsafe.SizeOf<Sprite>()];
+
+    public SpriteTex GetSprite(int id) => _sprites[id];
+
+    public SpriteTex GetSprite(TKey key) => _sprites[key.ToInt32(provider: default)];
 
     private sealed class Pow2RectImage : IImageInfo
     {
@@ -140,6 +169,27 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
         }
     }
 
+    [DebuggerDisplay("{X} {Y} {Angle} {Id}")]
+    public struct Sprite
+    {
+        /// <summary>
+        /// x pos on screen
+        /// </summary>
+        public float X { get; set; }
+        /// <summary>
+        /// y pos on screen
+        /// </summary>
+        public float Y { get; set; }
+        /// <summary>
+        /// angle
+        /// </summary>
+        public float Angle { get; set; }
+        /// <summary>
+        /// gpu char to render
+        /// </summary>
+        public float Id { get; set; }
+    }
+
     /// <summary>
     /// Defines texturespace of a glyph
     /// </summary>
@@ -148,7 +198,7 @@ public class SpriteSheet<TKey> : IDisposable where TKey : struct, Enum, IConvert
     /// <param name="w"></param>
     /// <param name="h"></param>
     [DebuggerDisplay("{X} {Y} {W} {H}")]
-    public readonly struct Sprite(
+    public readonly struct SpriteTex(
         short x, short y,
         short w, short h)
     {

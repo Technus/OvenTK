@@ -1,5 +1,8 @@
 ﻿using StbImageSharp;
+using System;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 
 namespace OvenTK.Lib;
@@ -8,7 +11,7 @@ namespace OvenTK.Lib;
 /// </summary>
 public static class Extensions
 {
-    internal const double _log2 = 0.30102999566398119521373889472449;
+    internal static readonly double _log2 = Math.Log(2);
 
     /// <summary>
     /// Enables printing to Debug and/or throwing exceptions on OpenGL errors
@@ -136,5 +139,21 @@ public static class Extensions
 
         // Here we open a stream to the file and pass it to StbImageSharp to load.
         return ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+    }
+
+    /// <summary>
+    /// Get enum description or to string value
+    /// </summary>
+    /// <typeparam name="TEnum"></typeparam>
+    /// <param name="enumValue"></param>
+    /// <returns></returns>
+    public static string GetDescription<TEnum>(this TEnum enumValue) where TEnum : struct, Enum
+    {
+        var str = enumValue.ToString();
+        var memInfo = typeof(TEnum).GetMember(str);
+        if (memInfo is null || memInfo.Length is 0)
+            throw new InvalidOperationException($"Enum value: {enumValue} is no defined");
+        var attribute = memInfo[0].GetCustomAttribute<DescriptionAttribute>(false);
+        return attribute?.Description ?? throw new InvalidOperationException($"Enum value: {enumValue} has no description");
     }
 }

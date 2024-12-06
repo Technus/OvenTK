@@ -12,8 +12,8 @@ namespace OvenTK.Lib;
 /// Then make a buffer: <see cref="CreateBufferAligned(int, int, BufferUsageHint)"/> or any other CreateStrings* methods.<br/>
 /// Then load everything into GPU (The buffer and the font with <see cref="UseBase(int)"/>), with a matching shader to render on screen.<br/><br/>
 /// 
-/// Buffer layout uses <see cref="BFChar"/><br/>
-/// While GPU Buffers are textures, and texture buffer with layout <see cref="BFGlyph"/>
+/// Buffer layout uses <see cref="Char"/><br/>
+/// While GPU Buffers are textures, and texture buffer with layout <see cref="CharTex"/>
 /// 
 /// </summary>
 /// <remarks>No support for embedded new lines or for multiple pages as of now.</remarks>
@@ -26,8 +26,8 @@ public class BitmapFont : IDisposable
     private readonly Texture[] _pages;
     private readonly BufferStorage _buffer;
     private readonly TextureBuffer _texBuffer;
-    private readonly Dictionary<char, (ushort id, Char def)> _stringToGpu;
-    private readonly (ushort id, Char def) _space;
+    private readonly Dictionary<char, (ushort id, CharDef def)> _stringToGpu;
+    private readonly (ushort id, CharDef def) _space;
 
     /// <summary>
     /// Constructor for the data structure, use <see cref="CreateFrom(Stream, Func{string, Stream}, int)"/>.
@@ -42,7 +42,7 @@ public class BitmapFont : IDisposable
         Texture[] pages,
         BufferStorage buffer,
         TextureBuffer texBuffer,
-        Dictionary<char, (ushort id, Char def)> stringToGpu)
+        Dictionary<char, (ushort id, CharDef def)> stringToGpu)
     {
         _font = font;
         _pages = pages;
@@ -85,8 +85,8 @@ public class BitmapFont : IDisposable
 
         //Map char to GPU glyph
         var charCount = font.Chars.Char.Count;
-        var data = new BFGlyph[charCount + 1];//+1 for ensuring null mapping
-        var stringToGpu = new Dictionary<char, (ushort id, Char def)>();
+        var data = new CharTex[charCount + 1];//+1 for ensuring null mapping
+        var stringToGpu = new Dictionary<char, (ushort id, CharDef def)>();
 
         for (int i = 0; i < charCount; i++)
         {
@@ -120,7 +120,7 @@ public class BitmapFont : IDisposable
     /// <param name="hint"></param>
     /// <returns></returns>
     public static BufferData CreateBufferAligned(int count, int maxLen, BufferUsageHint hint) =>
-        BufferData.Create(Unsafe.SizeOf<BFChar>() * maxLen * count, hint);
+        BufferData.Create(Unsafe.SizeOf<Char>() * maxLen * count, hint);
 
     /// <summary>
     /// Writes this font (family) specific buffer based on <paramref name="strings"/>
@@ -130,7 +130,7 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public BufferData CreateStringsFrom(IEnumerable<(float x, float y, float rotation, string text)> strings, BufferUsageHint hint)
     {
-        var data = new BFChar[strings.Sum(x => x.text.Length)];
+        var data = new Char[strings.Sum(x => x.text.Length)];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -166,7 +166,7 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public BufferData CreateStringsAlignedFrom(IEnumerable<(float x, float y, float rotation, string text)> strings, int count, int maxLen, BufferUsageHint hint)
     {
-        var data = new BFChar[maxLen * count];
+        var data = new Char[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -191,7 +191,7 @@ public class BitmapFont : IDisposable
     /// <returns></returns>
     public BufferData CreateStringsAlignedFrom(IEnumerable<(float x, float y, float rotation, IEnumerable<char> text)> strings, int count, int maxLen, BufferUsageHint hint)
     {
-        var data = new BFChar[maxLen * count];
+        var data = new Char[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -212,7 +212,7 @@ public class BitmapFont : IDisposable
     /// <param name="strings">strings with first baseline point position and rotation</param>
     public void RecreateStringsFrom(BufferData buffer, IEnumerable<(float x, float y, float rotation, string text)> strings)
     {
-        var data = new BFChar[strings.Sum(x => x.text.Length)];
+        var data = new Char[strings.Sum(x => x.text.Length)];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -247,7 +247,7 @@ public class BitmapFont : IDisposable
     /// <param name="maxLen"></param>
     public void RecreateStringsAlignedFrom(BufferData buffer, IEnumerable<(float x, float y, float rotation, string text)> strings, int count, int maxLen)
     {
-        var data = new BFChar[maxLen * count];
+        var data = new Char[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -271,7 +271,7 @@ public class BitmapFont : IDisposable
     /// <param name="maxLen"></param>
     public void RecreateStringsAlignedFrom(BufferData buffer, IEnumerable<(float x, float y, float rotation, IEnumerable<char> text)> strings, int count, int maxLen)
     {
-        var data = new BFChar[maxLen * count];
+        var data = new Char[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
@@ -293,7 +293,7 @@ public class BitmapFont : IDisposable
     /// <param name="text"></param>
     /// <param name="stride">in case the dataOut is transposed stride can be used to iterate over bigger iterator instead</param>
     /// <param name="cleanRest">fill remaining span (also using stride) to '\0' at -inf,-inf position</param>
-    public void WriteLineTo(Span<BFChar> dataOut, float x, float y, float rotation, ReadOnlySpan<char> text, int stride = 1, bool cleanRest = true)
+    public void WriteLineTo(Span<Char> dataOut, float x, float y, float rotation, ReadOnlySpan<char> text, int stride = 1, bool cleanRest = true)
     {
         var cos = Math.Cos(rotation);
         var sin = Math.Sin(rotation);
@@ -308,7 +308,7 @@ public class BitmapFont : IDisposable
             dataOut[i].X = (float)(x + rdx);
             dataOut[i].Y = (float)(y + rdy);
             dataOut[i].Angle = rotation;
-            dataOut[i].Char = val.id;
+            dataOut[i].Id = val.id;
 
             advance += val.def.Xadvance;
             i += stride;
@@ -320,7 +320,7 @@ public class BitmapFont : IDisposable
                 dataOut[i].X = float.NegativeInfinity;
                 dataOut[i].Y = float.NegativeInfinity;
                 dataOut[i].Angle = 0;
-                dataOut[i].Char = 0;
+                dataOut[i].Id = 0;
                 i += stride;
             }
     }
@@ -335,7 +335,7 @@ public class BitmapFont : IDisposable
     /// <param name="text"></param>
     /// <param name="stride">in case the dataOut is transposed stride can be used to iterate over bigger iterator instead</param>
     /// <param name="cleanRest">fill remaining span (also using stride) to '\0' at -inf,-inf position</param>
-    public void WriteLineEnumerableTo(Span<BFChar> dataOut, float x, float y, float rotation, IEnumerable<char> text, int stride = 1, bool cleanRest = true)
+    public void WriteLineEnumerableTo(Span<Char> dataOut, float x, float y, float rotation, IEnumerable<char> text, int stride = 1, bool cleanRest = true)
     {
         var cos = Math.Cos(rotation);
         var sin = Math.Sin(rotation);
@@ -350,7 +350,7 @@ public class BitmapFont : IDisposable
             dataOut[i].X = (float)(x + rdx);
             dataOut[i].Y = (float)(y + rdy);
             dataOut[i].Angle = rotation;
-            dataOut[i].Char = val.id;
+            dataOut[i].Id = val.id;
 
             advance += val.def.Xadvance;
             i += stride;
@@ -362,7 +362,7 @@ public class BitmapFont : IDisposable
                 dataOut[i].X = float.NegativeInfinity;
                 dataOut[i].Y = float.NegativeInfinity;
                 dataOut[i].Angle = 0;
-                dataOut[i].Char = 0;
+                dataOut[i].Id = 0;
                 i += stride;
             }
     }
@@ -372,14 +372,14 @@ public class BitmapFont : IDisposable
     /// </summary>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static int InstanceCount(BufferData data) => data.Size / Unsafe.SizeOf<BFChar>();
+    public static int InstanceCount(BufferData data) => data.Size / Unsafe.SizeOf<Char>();
 
     /// <summary>
-    /// Makes a <see cref="BFChar"/> array the size of <paramref name="data"/>.
+    /// Makes a <see cref="Char"/> array the size of <paramref name="data"/>.
     /// </summary>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static BFChar[] MakeArray(BufferData data) => new BFChar[data.Size / Unsafe.SizeOf<BFChar>()];
+    public static Char[] MakeArray(BufferData data) => new Char[data.Size / Unsafe.SizeOf<Char>()];
 
     /// <summary>
     /// Helper method to judge how many pages were loaded<br/>
@@ -396,8 +396,8 @@ public class BitmapFont : IDisposable
     public int UseBase(int textureUnit)
     {
         foreach (var page in _pages)
-            GL.BindTextureUnit(textureUnit++, page);
-        GL.BindTextureUnit(textureUnit++, _texBuffer);
+            page.Use(textureUnit++);
+        _texBuffer.Use(textureUnit++);
         return textureUnit;
     }
 
@@ -437,10 +437,10 @@ public class BitmapFont : IDisposable
     }
 
     /// <summary>
-    /// Defines glyph position, angle and <see cref="BFGlyph"/> Id in the font data buffer
+    /// Defines glyph position, angle and <see cref="CharTex"/> Id in the font data buffer
     /// </summary>
-    [DebuggerDisplay("{X} {Y} {Angle} {Char}")]
-    public struct BFChar
+    [DebuggerDisplay("{X} {Y} {Angle} {Id}")]
+    public struct Char
     {
         /// <summary>
         /// x pos on screen
@@ -457,7 +457,7 @@ public class BitmapFont : IDisposable
         /// <summary>
         /// gpu char to render
         /// </summary>
-        public float Char { get; set; }
+        public float Id { get; set; }
     }
 
     /// <summary>
@@ -468,7 +468,7 @@ public class BitmapFont : IDisposable
     /// <param name="w"></param>
     /// <param name="h"></param>
     [DebuggerDisplay("{X} {Y} {W} {H}")]
-    public readonly struct BFGlyph(
+    public readonly struct CharTex(
         short x, short y,
         short w, short h)
     {
@@ -640,7 +640,7 @@ public class BitmapFont : IDisposable
     /// Holder for font texture definition
     /// </summary>
     [XmlRoot(ElementName = "page")]
-    public class Page : IComparable<Char>
+    public class Page : IComparable<CharDef>
     {
         /// <summary>
         /// id of the page
@@ -659,7 +659,7 @@ public class BitmapFont : IDisposable
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? default);
+        public int CompareTo(CharDef? other) => Id.CompareTo(other?.Id ?? default);
     }
 
     /// <summary>
@@ -679,7 +679,7 @@ public class BitmapFont : IDisposable
     /// Holder for glyph definition
     /// </summary>
     [XmlRoot(ElementName = "char")]
-    public class Char : IComparable<Char>
+    public class CharDef : IComparable<CharDef>
     {
         /// <summary>
         /// id of the char
@@ -746,11 +746,11 @@ public class BitmapFont : IDisposable
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(Char? other) => Id.CompareTo(other?.Id ?? default);
+        public int CompareTo(CharDef? other) => Id.CompareTo(other?.Id ?? default);
     }
 
     /// <summary>
-    /// <see cref="BitmapFont.Char"/> array
+    /// <see cref="BitmapFont.CharDef"/> array
     /// </summary>
     [XmlRoot(ElementName = "chars")]
     public class Chars
@@ -759,7 +759,7 @@ public class BitmapFont : IDisposable
         /// List of chars...
         /// </summary>
         [XmlElement(ElementName = "char")]
-        public List<Char>? Char { get; set; }
+        public List<CharDef>? Char { get; set; }
 
         /// <summary>
         /// Count of chars
