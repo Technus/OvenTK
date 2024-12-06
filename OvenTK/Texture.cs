@@ -5,6 +5,7 @@ namespace OvenTK.Lib;
 // A helper class, much like Shader, meant to simplify loading textures.
 public class Texture : IDisposable
 {
+    private const int _mipDefault = 4;
     private bool _disposed;
     private int handle;
     private readonly int width;
@@ -21,7 +22,19 @@ public class Texture : IDisposable
     public int Width => width;
     public int Height => height;
 
-    public static Texture LoadFromFile(string path, int mipLevels = 4)
+    public static Texture CreateFrom(byte[] bytes, int mipLevels = _mipDefault)
+    {
+        using var stream = new MemoryStream(bytes);
+        return CreateFrom(stream, mipLevels);
+    }
+
+    public static Texture CreateFrom(string filePath, int mipLevels = _mipDefault)
+    {
+        using var stream = File.OpenRead(filePath);
+        return CreateFrom(stream, mipLevels);
+    }
+
+    public static Texture CreateFrom(Stream stream, int mipLevels = _mipDefault)
     {
         // Generate handle
         GL.CreateTextures(TextureTarget.Texture2D, 1, out int handle);
@@ -38,9 +51,7 @@ public class Texture : IDisposable
         StbImage.stbi_set_flip_vertically_on_load(1);
 
         // Here we open a stream to the file and pass it to StbImageSharp to load.
-        var stream = File.OpenRead(path);
         var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
-        stream.Dispose();
 
         // Now that our pixels are prepared, it's time to generate a texture. We do this with GL.TexImage2D.
         // Arguments:

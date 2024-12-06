@@ -3,153 +3,150 @@
 public class BufferData : IDisposable
 {
     private const BufferUsageHint _default = BufferUsageHint.StaticDraw;
-    private readonly BufferUsageHint hint;
     private bool _disposed;
-    private int handle;
-    private int byteSize;
 
     protected BufferData(int handle, int byteSize, BufferUsageHint hint = _default)
     {
-        this.handle = handle;
-        this.byteSize = byteSize;
-        this.hint = hint;
+        Handle = handle;
+        Size = byteSize;
+        Hint = hint;
     }
 
-    public int Handle => handle;
-    public int Size => byteSize;
-    public BufferUsageHint Hint => hint;
+    public int Handle { get; protected set; }
+    public int Size { get; protected set; }
+    public BufferUsageHint Hint { get; protected set; }
 
     public void Resize(int size)
     {
-        byteSize = size;
-        GL.NamedBufferData(handle, size, default, hint);
+        Size = size;
+        GL.NamedBufferData(Handle, size, default, Hint);
     }
 
     public void CopyTo(BufferData other)
     {
-        if (other.Size < byteSize)
-            throw new InvalidOperationException($"Buffer cannot copy, Size: {byteSize}->{other.Size}");
-        GL.CopyNamedBufferSubData(handle, other.Handle, default, default, byteSize);
+        if (other.Size < Size)
+            throw new InvalidOperationException($"Buffer cannot copy, Size: {Size}->{other.Size}");
+        GL.CopyNamedBufferSubData(Handle, other.Handle, default, default, Size);
     }
 
     public unsafe void Write<V>(ref readonly Memory<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
         using var pin = value.Pin();
-        GL.NamedBufferSubData(handle, default, size, (nint)pin.Pointer);
+        GL.NamedBufferSubData(Handle, default, size, (nint)pin.Pointer);
     }
 
     public unsafe void Write<V>(ref readonly ReadOnlyMemory<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
         using var pin = value.Pin();
-        GL.NamedBufferSubData(handle, default, size, (nint)pin.Pointer);
+        GL.NamedBufferSubData(Handle, default, size, (nint)pin.Pointer);
     }
 
     public unsafe void Write<V>(ref readonly Span<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
         fixed (V* p = value)
-            GL.NamedBufferSubData(handle, default, size, (nint)p);
+            GL.NamedBufferSubData(Handle, default, size, (nint)p);
     }
 
     public unsafe void Write<V>(ref readonly ReadOnlySpan<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
         fixed (V* p = value)
-            GL.NamedBufferSubData(handle, default, size, (nint)p);
+            GL.NamedBufferSubData(Handle, default, size, (nint)p);
     }
 
     public unsafe void Write<V>(ref readonly V value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
         fixed(V* p = &value)
-            GL.NamedBufferSubData(handle, default, size, (nint)p);
+            GL.NamedBufferSubData(Handle, default, size, (nint)p);
     }
 
     public void Write<V>(V[] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
-        GL.NamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        GL.NamedBufferSubData(Handle, default, size, value);
     }
 
     public void Write<V>(V[,] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
-        GL.NamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        GL.NamedBufferSubData(Handle, default, size, value);
     }
 
     public void Write<V>(V[,,] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{byteSize}");
-        GL.NamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot write {typeof(V).Name}, Size: {size}->{Size}");
+        GL.NamedBufferSubData(Handle, default, size, value);
     }
 
     public unsafe void Read<V>(ref readonly Memory<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
         using var pin = value.Pin();
-        GL.GetNamedBufferSubData(handle, default, size, (nint)pin.Pointer);
+        GL.GetNamedBufferSubData(Handle, default, size, (nint)pin.Pointer);
     }
 
     public unsafe void Read<V>(ref readonly Span<V> value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
         fixed (V* p = value)
-            GL.GetNamedBufferSubData(handle, default, size, (nint)p);
+            GL.GetNamedBufferSubData(Handle, default, size, (nint)p);
     }
 
     public unsafe void Read<V>(ref readonly V value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
         fixed(V* p = &value)
-            GL.GetNamedBufferSubData(handle, default, size, (nint)p);
+            GL.GetNamedBufferSubData(Handle, default, size, (nint)p);
     }
 
     public void Read<V>(V[] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
-        GL.GetNamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        GL.GetNamedBufferSubData(Handle, default, size, value);
     }
 
     public void Read<V>(V[,] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
-        GL.GetNamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        GL.GetNamedBufferSubData(Handle, default, size, value);
     }
     
     public void Read<V>(V[,,] value) where V : struct
     {
         var size = value.SizeOf();
-        if (byteSize < size)
-            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {byteSize}->{size}");
-        GL.GetNamedBufferSubData(handle, default, size, value);
+        if (Size < size)
+            throw new InvalidOperationException($"Buffer cannot read {typeof(V).Name}, Size: {Size}->{size}");
+        GL.GetNamedBufferSubData(Handle, default, size, value);
     }
 
     /// <summary>
@@ -271,11 +268,11 @@ public class BufferData : IDisposable
         {
             if (disposing)
             {
-                byteSize = default;
+                Size = default;
             }
 
-            GL.DeleteBuffers(1, ref handle);
-            handle = default;
+            GL.DeleteBuffer(Handle);
+            Handle = default;
 
             _disposed = true;
         }

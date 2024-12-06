@@ -3,21 +3,18 @@
 public class BufferStorage : IDisposable
 {
     private const BufferStorageFlags _default = BufferStorageFlags.None;
-    private readonly BufferStorageFlags flags;
     private bool _disposed;
-    private int handle;
-    private int byteSize;
 
     protected BufferStorage(int handle, int byteSize, BufferStorageFlags flags = _default)
     {
-        this.handle = handle;
-        this.byteSize = byteSize;
-        this.flags = flags;
+        Handle = handle;
+        Size = byteSize;
+        Flags = flags;
     }
 
-    public int Handle => handle;
-    public int Size => byteSize;
-    public BufferStorageFlags Flags => flags;
+    public int Handle { get; protected set; }
+    public int Size { get; protected set; }
+    public BufferStorageFlags Flags { get; protected set; }
 
     /// <summary>
     /// Creates Buffers without data
@@ -138,11 +135,11 @@ public class BufferStorage : IDisposable
         {
             if (disposing)
             {
-                byteSize = default;
+                Size = default;
             }
-
-            GL.DeleteBuffers(1, ref handle);
-            handle = default;
+            
+            GL.DeleteBuffer(Handle);
+            Handle = default;
 
             _disposed = true;
         }

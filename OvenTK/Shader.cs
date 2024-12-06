@@ -5,14 +5,13 @@ public class Shader : IDisposable
 {
     private bool _disposed;
     private Dictionary<string, int>? _uniformLocations;
-    private int handle;
 
     protected Shader(int handle)
     {
-        this.handle = handle;
+        Handle = handle;
     }
 
-    public int Handle => handle;
+    public int Handle { get; private set; }
 
     public IReadOnlyDictionary<string, int> UniformLocations
     {
@@ -54,13 +53,6 @@ public class Shader : IDisposable
     // A commented example of GLSL can be found in shader.vert.
     public static Shader LoadFromText(string vertSrc, string fragSrc)
     {
-        // There are several different types of shaders, but the only two you need for basic rendering are the vertex and fragment shaders.
-        // The vertex shader is responsible for moving around vertices, and uploading that data to the fragment shader.
-        //   The vertex shader won't be too important here, but they'll be more important later.
-        // The fragment shader is responsible for then converting the vertices to "fragments", which represent all the data OpenGL needs to draw a pixel.
-        //   The fragment shader is what we'll be using the most here.
-
-
         // GL.CreateShader will create an empty shader (obviously). The ShaderType enum denotes which type of shader will be created.
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertSrc);
@@ -199,8 +191,8 @@ public class Shader : IDisposable
 
             //if (GL.GetInteger(GetPName.CurrentProgram) == handle)
             //    GL.UseProgram(default);
-            GL.DeleteProgram(handle);
-            handle = default;
+            GL.DeleteProgram(Handle);
+            Handle = default;
 
             _uniformLocations = null;
             _disposed = true;
