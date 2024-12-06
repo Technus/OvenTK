@@ -5,7 +5,6 @@ namespace OvenTK.Lib;
 
 public class BitmapFont : IDisposable
 {
-    private const int _charDataSize = 4;//X,Y,Rotation,Char ID, 4 numbers is max (4 floats)
     private static readonly XmlSerializer _serializer = new(typeof(Font));
 
     private bool _disposedValue;
@@ -30,36 +29,35 @@ public class BitmapFont : IDisposable
         _stringToGpu = stringToGpu;
         _space = stringToGpu[' '];
     }
-    public BufferData CreateStringsAligned(IList<(float x, float y, float rotation, string text)> strings, int maxLen, BufferUsageHint hint) =>
-        CreateStringsAligned(strings, maxLen, strings.Count, hint);
-    public void RecreateStringsAligned(BufferData buffer, IList<(float x, float y, float rotation, string text)> strings, int maxLen) =>
-        RecreateStringsAligned(buffer, strings, maxLen, strings.Count);
-
 
     public BufferData CreateStrings(IEnumerable<(float x, float y, float rotation, string text)> strings, BufferUsageHint hint)
     {
-        var data = new float[strings.Sum(x => x.text.Length) * _charDataSize];
+        var data = new BFChar[strings.Sum(x => x.text.Length)];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize*text.Length), x, y, rotation, text);
-            i += text.Length * _charDataSize;
+            WriteLine(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
+            i += text.Length;
         }
 
         var buffer = BufferData.CreateFrom(data, hint);
         return buffer;
     }
 
+    public BufferData CreateStringsAligned(IList<(float x, float y, float rotation, string text)> strings, int maxLen, BufferUsageHint hint) =>
+        CreateStringsAligned(strings, strings.Count, maxLen, hint);
+
+
     public BufferData CreateStringsAligned(IEnumerable<(float x, float y, float rotation, string text)> strings, int count, int maxLen, BufferUsageHint hint)
     {
-        var data = new float[maxLen * _charDataSize * count];
+        var data = new BFChar[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize * maxLen), x, y, rotation, text);
-            i += maxLen * _charDataSize;
+            WriteLine(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
+            i += maxLen;
         }
 
         var buffer = BufferData.CreateFrom(data, hint);
@@ -68,42 +66,50 @@ public class BitmapFont : IDisposable
 
     public BufferData CreateStringsAligned(IEnumerable<(float x, float y, float rotation, IEnumerable<char> text)> strings, int count, int maxLen, BufferUsageHint hint)
     {
-        var data = new float[maxLen * _charDataSize * count];
+        var data = new BFChar[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize * maxLen), x, y, rotation, text);
-            i += maxLen * _charDataSize;
+            WriteLineEnumerable(data.AsSpan(i, maxLen), x, y, rotation, text);
+            i += maxLen;
         }
 
         var buffer = BufferData.CreateFrom(data, hint);
         return buffer;
     }
 
+    public BufferData CreateStringsAligned(int count, int maxLen, BufferUsageHint hint)
+    {
+        var buffer = BufferData.Create(Unsafe.SizeOf<BFChar>() * maxLen * count, hint);
+        return buffer;
+    }
+
     public void RecreateStrings(BufferData buffer, IEnumerable<(float x, float y, float rotation, string text)> strings)
     {
-        var data = new float[strings.Sum(x => x.text.Length) * _charDataSize];
+        var data = new BFChar[strings.Sum(x => x.text.Length)];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize * text.Length), x, y, rotation, text);
-            i += text.Length * _charDataSize;
+            WriteLine(data.AsSpan(i, text.Length), x, y, rotation, text.AsSpan());
+            i += text.Length;
         }
 
         buffer.Recreate(data);
     }
+    public void RecreateStringsAligned(BufferData buffer, IList<(float x, float y, float rotation, string text)> strings, int maxLen) =>
+        RecreateStringsAligned(buffer, strings, strings.Count, maxLen);
 
     public void RecreateStringsAligned(BufferData buffer, IEnumerable<(float x, float y, float rotation, string text)> strings, int count, int maxLen)
     {
-        var data = new float[maxLen * _charDataSize * count];
+        var data = new BFChar[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize * maxLen), x, y, rotation, text);
-            i += maxLen * _charDataSize;
+            WriteLine(data.AsSpan(i, maxLen), x, y, rotation, text.AsSpan());
+            i += maxLen;
         }
 
         buffer.Recreate(data);
@@ -111,19 +117,19 @@ public class BitmapFont : IDisposable
 
     public void RecreateStringsAligned(BufferData buffer, IEnumerable<(float x, float y, float rotation, IEnumerable<char> text)> strings, int count, int maxLen)
     {
-        var data = new float[maxLen * _charDataSize * count];
+        var data = new BFChar[maxLen * count];
 
         var i = 0;
         foreach (var (x, y, rotation, text) in strings)
         {
-            WriteLine(data.AsSpan(i, _charDataSize * maxLen), x, y, rotation, text);
-            i += maxLen * _charDataSize;
+            WriteLineEnumerable(data.AsSpan(i, maxLen), x, y, rotation, text);
+            i += maxLen;
         }
 
         buffer.Recreate(data);
     }
 
-    private void WriteLine(Span<float> dataOut, float x, float y, float rotation, IEnumerable<char> text)
+    public void WriteLine(Span<BFChar> dataOut, float x, float y, float rotation, ReadOnlySpan<char> text, int stride = 1, bool cleanRest = true)
     {
         var cos = Math.Cos(rotation);
         var sin = Math.Sin(rotation);
@@ -133,23 +139,54 @@ public class BitmapFont : IDisposable
         {
             if (!_stringToGpu.TryGetValue(ch, out var val))
                 val = _space;
-            var (dx, dy) = (advance + val.def.Xoffset, _font.Common.LineHeight-( val.def.Yoffset+val.def.Height));//pre rotation
+            var (dx, dy) = (advance + val.def.Xoffset, _font.Common.Base - (val.def.Yoffset + val.def.Height));//pre rotation
             var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
-            dataOut[i+0] = (float)(x + rdx);
-            dataOut[i+1] = (float)(y + rdy);
-            dataOut[i+2] = rotation;
-            dataOut[i+3] = val.id;
+            dataOut[i].X = (float)(x + rdx);
+            dataOut[i].Y = (float)(y + rdy);
+            dataOut[i].Angle = rotation;
+            dataOut[i].Char = val.id;
 
             advance += val.def.Xadvance;
-            i += _charDataSize;
+            i += stride;
+        }
+
+        while(i<dataOut.Length)
+        {
+            dataOut[i].X = float.NegativeInfinity;
+            dataOut[i].Y = float.NegativeInfinity;
+            dataOut[i].Angle = rotation;
+            dataOut[i].Char = _space.id;
+            i += stride;
         }
     }
 
-    public static BitmapFont CreateFrom(Stream stream, Func<string, Stream> textureResolver, int mipLevels = Texture._mipDefault)
+    private void WriteLineEnumerable(Span<BFChar> dataOut, float x, float y, float rotation, IEnumerable<char> text, int stride = 1)
     {
+        var cos = Math.Cos(rotation);
+        var sin = Math.Sin(rotation);
+        var advance = 0;
+        var i = 0;
+        foreach (var ch in text)
+        {
+            if (!_stringToGpu.TryGetValue(ch, out var val))
+                val = _space;
+            var (dx, dy) = (advance + val.def.Xoffset, _font.Common.Base-( val.def.Yoffset+val.def.Height));//pre rotation
+            var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
+            dataOut[i].X = (float)(x + rdx);
+            dataOut[i].Y = (float)(y + rdy);
+            dataOut[i].Angle = rotation;
+            dataOut[i].Char = val.id;
+
+            advance += val.def.Xadvance;
+            i += stride;
+        }
+    }
+
+    public static BitmapFont CreateFrom(Stream fontDefinition, Func<string, Stream> textureResolver, int mipLevels = Texture._mipDefault)
+    {
+        using var stream = fontDefinition;
         if (_serializer.Deserialize(stream) is not Font font)
             throw new InvalidOperationException("Deserialized null");
-        stream.Dispose();
 
         var pages = new Texture[font.Pages.Page.Count];
         for (int page = 0; page < pages.Length; page++)
@@ -198,7 +235,9 @@ public class BitmapFont : IDisposable
         }
     }
 
-    public int InstanceCount(BufferData data) => data.Size / (Unsafe.SizeOf<float>()*_charDataSize);
+    public static int InstanceCount(BufferData data) => data.Size / Unsafe.SizeOf<BFChar>();
+
+    public static BFChar[] MakeArray(BufferData data) => new BFChar[data.Size / Unsafe.SizeOf<BFChar>()];
 
     public int PageCount() => _font.Pages.Page.Count;
 
@@ -216,6 +255,15 @@ public class BitmapFont : IDisposable
     {
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
+    }
+
+    [DebuggerDisplay("{X} {Y} {Angle} {Char}")]
+    public struct BFChar
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Angle { get; set; }
+        public float Char { get; set; }
     }
 
     [DebuggerDisplay("{X1} {Y1} {X2} {Y2} {X2-X1} {Y2-Y1} {Page}")]

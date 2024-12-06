@@ -31,6 +31,11 @@ public readonly struct Shader(int handle) : IDisposable
 
     public static Shader CreateFrom(ShaderType type, string shader)
     {
+#if DEBUG
+        if (shader.Any(c => c > 128))
+            throw new ArgumentOutOfRangeException(nameof(shader), shader, "Shader Source contains non ASCII characters");
+#endif
+
         var handle = GL.CreateShader(type);
         GL.ShaderSource(handle, shader);
 

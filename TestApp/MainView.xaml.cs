@@ -19,7 +19,7 @@ public partial class MainView : UserControl
         });
 
 #if DEBUG
-        Extensions.EnableDebug();
+        Extensions.EnableDebug(false);
 #endif
     }
 }

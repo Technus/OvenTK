@@ -74,6 +74,7 @@ public class ShaderProgram : IDisposable
 
     public static async Task<ShaderProgram> CreateFromAsync(Stream vert, Stream frag, Encoding encoding = default!)
     {
+        encoding ??= Encoding.UTF8;
         using var vertReader = new StreamReader(vert, encoding);
         using var fragReader = new StreamReader(frag, encoding);
         var vertStr = vertReader.ReadToEndAsync();

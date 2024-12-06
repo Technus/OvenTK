@@ -4,6 +4,7 @@ using OvenTK.Lib;
 using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Windows.Media.Imaging;
 
 namespace OvenTK.TestApp;
 
@@ -22,11 +23,13 @@ public class MainViewModel : DependencyObject
     private const int _boxBase = _base;
     private const int _containerBase = _base + _boxes;
 
-    private const int _boxWidth = 120;
+    private const int _boxWidth = 128;
     private const int _boxHeight = 64;
     private const int _digitWidth = 18;
     private const int _digitHeight = 32;
     private const int _leftMargin = _digitWidth / 2 + 4;
+
+    private const int _textLen = 7;
 
     private static Random _random = new();
 
@@ -42,7 +45,7 @@ public class MainViewModel : DependencyObject
         CameraScale = 1,
         InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
     };
-    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_)> _dTtriple;
+    private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_, BitmapFont.BFChar[] text)> _dTtriple;
 
 
     private struct PosRot
@@ -61,8 +64,8 @@ public class MainViewModel : DependencyObject
 
     private struct IdProg
     {
-        public uint Id { get; set; }
-        public uint Program { get; set; }
+        public int Id { get; set; }
+        public int Program { get; set; }
     }
 
     private struct Uniform
@@ -144,7 +147,7 @@ public class MainViewModel : DependencyObject
 
     public async Task DataWriteMapped(int cpus = _cpus, CancellationToken token = default)
     {
-        if (_uniform.InstanceCount % cpus is not 0)
+        if (_count % cpus is not 0)
             throw new InvalidOperationException();
 
         while (!token.IsCancellationRequested)
@@ -159,16 +162,22 @@ public class MainViewModel : DependencyObject
                 using var w = _dTtriple.Write();
                 var b = w.Buffer;
 
-                var batch = _uniform.InstanceCount / cpus;
+                var batch = _count / cpus;
                 var tasks = Enumerable.Range(0, cpus).Select(i => Task.Run(() =>
                 {
-                    var start = (uint)(i * batch);
+                    var start = i * batch;
                     var end = start + batch;
-                    for (uint j = start; j < end; j++)
+                    for (int j = start; j < end; j++)
                     {
                         b.xyar[j] = new PosRot((float)(_random.NextDouble() - 0.5) * 8000, (float)(_random.NextDouble() - 0.5) * 8000, (float)((_random.NextDouble() - 0.5) * (Math.PI)));
                         b.color[j] = Color.FromArgb(255, 0, (int)(_random.NextDouble() / 2 * 255), (int)(_random.NextDouble() * 255)).ToArgb();
                         b.cip_[j] = new IdProg { Id = j, Program = j * 100 };
+                        var rotation = b.xyar[j].Rot;
+                        var cos = Math.Cos(rotation);
+                        var sin = Math.Sin(rotation);
+                        var (dx, dy) = (-59,-24);//pre rotation
+                        var (rdx, rdy) = (cos * dx - sin * dy, sin * dx + cos * dy);//post rotation
+                        _fConsolas.WriteLine(b.text.AsSpan(j * _textLen, _textLen), (float)(b.xyar[j].X+ rdx), (float)(b.xyar[j].Y+ rdy), rotation, _random.Next(10000000).ToString().AsSpan());
                     }
                 }));
 
@@ -202,10 +211,7 @@ public class MainViewModel : DependencyObject
             file => Application.GetResourceStream(new Uri(@$"\Resources\{file}", UriKind.Relative)).Stream);
         textureCount = _fConsolas.UseBase(textureCount);
 
-        _dText = _fConsolas.CreateStrings([
-            (100, 0, (float)Math.PI/3, "mnopqrst"),
-            (-200, -100, (float)0, "Hello world from OpenGL!.,`~'"),
-        ], BufferUsageHint.DynamicDraw);
+        _dText = _fConsolas.CreateStringsAligned(_count, _textLen, BufferUsageHint.DynamicDraw);
 
         Debug.WriteLine("Used texture units {0}", textureCount);
 
@@ -216,10 +222,10 @@ public class MainViewModel : DependencyObject
         _sUnitRectVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(10, 10));
         _sDigitVertices = BufferStorage.CreateFrom(Extensions.MakeRectVertices(18, 32));
 
-        _dTtriple = new(() => (new PosRot[_uniform.InstanceCount], new int[_uniform.InstanceCount], new IdProg[_uniform.InstanceCount]));//will be streamed to _d*
-        _dXYAngleRatio = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
-        _dColor = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<int>(), BufferUsageHint.StreamDraw);
-        _dIdProgram = BufferData.Create(_uniform.InstanceCount * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
+        _dTtriple = new(() => (new PosRot[_count], new int[_count], new IdProg[_count], new BitmapFont.BFChar[BitmapFont.InstanceCount(_dText)]));//will be streamed to _d*
+        _dXYAngleRatio = BufferData.Create(_count * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
+        _dColor = BufferData.Create(_count * Unsafe.SizeOf<int>(), BufferUsageHint.StreamDraw);
+        _dIdProgram = BufferData.Create(_count * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
 
 
         _sUniform = BufferData.CreateFrom(ref _uniform, BufferUsageHint.StreamDraw);
@@ -242,7 +248,7 @@ public class MainViewModel : DependencyObject
             VertexArrayAttrib.Create(_dIdProgram,           2, VertexAttribType.UnsignedInt,  divisor: 1),
         ]);
         _vText = VertexArray.Create(_sRectIndices, [
-            VertexArrayAttrib.Create(_sUnitRectVertices,         2, VertexAttribType.Float),
+            VertexArrayAttrib.Create(_sUnitRectVertices,    2, VertexAttribType.Float),
             VertexArrayAttrib.Create(_dText,                4, VertexAttribType.Float,        divisor: 1),
         ]);
 
@@ -277,6 +283,7 @@ public class MainViewModel : DependencyObject
             _dXYAngleRatio.Recreate(b.xyar);
             _dColor.Recreate(b.color);
             _dIdProgram.Recreate(b.cip_);
+            _dText.Recreate(b.text);
             _invalidated = true;
         }
 
@@ -285,60 +292,63 @@ public class MainViewModel : DependencyObject
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        //if (_uniform.CameraScale >= 0.0625)
-        //{
-        //    _pRect.Use();
-        //
-        //    //rect boxes
-        //    _vBox.Use();
-        //    _uniform.InstanceBase = _boxBase;
-        //    _sUniform.Recreate(ref _uniform);
-        //    GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-        //        default, _boxes, _uniform.InstanceBase);
-        //
-        //    //square containers
-        //    _vContainer.Use();
-        //    _uniform.InstanceBase = _containerBase;
-        //    _sUniform.Recreate(ref _uniform);
-        //    GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-        //        default, _containers, _uniform.InstanceBase);
-        //}
-        //
-        //if (_uniform.CameraScale >= 0.25)
-        //{
-        //    _vDigits.Use();
-        //    _pDigits.Use();
-        //    _uniform.InstanceBase = _base;
-        //
-        //    _uniform.DigitIndex = 0;
-        //    const int idDigits = 4;
-        //    for (int i = 0; i < idDigits; i++)//foreach id digit
-        //    {
-        //        _uniform.DigitDiv = (int)Math.Pow(10, idDigits - i - 1);
-        //        _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, +_digitHeight / 2);
-        //        _sUniform.Recreate(ref _uniform);
-        //        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-        //            default, _count, _uniform.InstanceBase);
-        //    }
-        //
-        //    _uniform.DigitIndex = 1;
-        //    const int progDigits = 6;
-        //    for (int i = 0; i < progDigits; i++)//foreach prog digit
-        //    {
-        //        _uniform.DigitDiv = (int)Math.Pow(10, progDigits - i - 1);
-        //        _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, -_digitHeight / 2);
-        //        _sUniform.Recreate(ref _uniform);
-        //        GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-        //            default, _count, _uniform.InstanceBase);
-        //    }
-        //}
-        //
-        //GL.Clear(ClearBufferMask.DepthBufferBit);//next layer
+        if (_uniform.CameraScale >= 0.0625)
+        {
+            _pRect.Use();
+        
+            //rect boxes
+            _vBox.Use();
+            _uniform.InstanceBase = _boxBase;
+            _uniform.InstanceCount = _count;
+            _sUniform.Recreate(ref _uniform);
+            GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+                default, _boxes, _uniform.InstanceBase);
+        
+            //square containers
+            _vContainer.Use();
+            _uniform.InstanceBase = _containerBase;
+            _uniform.InstanceCount = _count;
+            _sUniform.Recreate(ref _uniform);
+            GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+                default, _containers, _uniform.InstanceBase);
+        }
+        
+        if (_uniform.CameraScale >= 0.25)
+        {
+            _vDigits.Use();
+            _pDigits.Use();
+            _uniform.InstanceBase = _base;
+            _uniform.InstanceCount = _count;
+
+            _uniform.DigitIndex = 0;
+            const int idDigits = 4;
+            for (int i = 0; i < idDigits; i++)//foreach id digit
+            {
+                _uniform.DigitDiv = (int)Math.Pow(10, idDigits - i - 1);
+                _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, +_digitHeight / 2);
+                _sUniform.Recreate(ref _uniform);
+                GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+                    default, _count, _uniform.InstanceBase);
+            }
+        
+            //_uniform.DigitIndex = 1;
+            //const int progDigits = 6;
+            //for (int i = 0; i < progDigits; i++)//foreach prog digit
+            //{
+            //    _uniform.DigitDiv = (int)Math.Pow(10, progDigits - i - 1);
+            //    _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, -_digitHeight / 2);
+            //    _sUniform.Recreate(ref _uniform);
+            //    GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
+            //        default, _count, _uniform.InstanceBase);
+            //}
+        }
 
         _vText.Use();
         _pText.Use();
+        _uniform.InstanceBase = _base - _textLen+1;
+        _uniform.InstanceCount = _count * _textLen;
         _sUniform.Recreate(ref _uniform);
-        GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, _fConsolas.InstanceCount(_dText));
+        GL.DrawElementsInstanced(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType, default, BitmapFont.InstanceCount(_dText));
 
         var td = FrequencyCounter.GetElapsedTime(sw, Stopwatch.GetTimestamp());
         Debug.WriteLine($"Draw Time {td}");
