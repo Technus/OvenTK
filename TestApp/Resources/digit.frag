@@ -1,6 +1,6 @@
 ﻿#version 460 compatibility
 
-layout(location = 0) in vec4 color;//from shader
+layout(location = 0) in vec2 texPos;//from shader
 
 layout(binding = 0) uniform Uniform{
     vec2 size;
@@ -10,6 +10,7 @@ layout(binding = 0) uniform Uniform{
     uint base;
     uint count;
     uint digitDiv;
+    uint digitI;
 };
 
 //samplers sample in range: [0,1],[0,1]
@@ -17,5 +18,5 @@ layout(binding = 0) uniform sampler2D diffuseTex;//binds to texture unit
 
 void main()
 {
-    gl_FragColor = color;
+    gl_FragColor = texture(diffuseTex, texPos);
 }
