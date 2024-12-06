@@ -4,9 +4,9 @@ layout(location = 0) in vec2 texPos;//from shader
 
 layout(binding = 0) uniform Uniform{
     vec2 size;
-    vec2 scale;
     vec2 pos;
     vec2 digitPos;
+    float scale;
     uint base;
     uint count;
     uint digitDiv;
