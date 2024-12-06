@@ -39,7 +39,7 @@ public class BufferStorage : BufferBase, IDisposable
     /// <returns></returns>
     public BufferStorage WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Buffer, Handle, -1, label);

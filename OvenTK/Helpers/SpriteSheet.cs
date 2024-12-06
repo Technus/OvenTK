@@ -40,7 +40,7 @@ public class SpriteSheet : IDisposable
     /// <returns></returns>
     public SpriteSheet WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Texture, _texture.Handle, -1, $"{label}:Texture");

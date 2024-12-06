@@ -7,10 +7,12 @@
 		
 		<PackageIcon>Neith_spacepedia.png</PackageIcon>
 		<PackageTags>OvenTK;OpenTK;OpenGL;</PackageTags>
+		<Authors>Technus</Authors>
 		<PackageProjectUrl>https://github.com/Technus/OvenTK</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Technus/OvenTK</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<Copyright></Copyright>
 		
 		<CustomNamePrefix>OvenTK</CustomNamePrefix>
 		<AssemblyName>$(CustomNamePrefix).$(MSBuildProjectName)</AssemblyName>

@@ -92,7 +92,7 @@ public class MainViewModel : DependencyObject
         CameraScale = 1,
         InstanceCount = _count,
     };
-    private TripleBufferSimple<(PosRot[] xyar, ColorARGB[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers, ColorARGB[] bezierColors)> _tTriple;
+    private TripleBufferSimple<(PosRot[] xyar, ColorArgb[] color, IdProg[] cip_, BitmapFont.Char[] text, SpriteSheet.Sprite[] sprites, CubicBezierPatch[] beziers, ColorArgb[] bezierColors)> _tTriple;
 
     /// <summary>
     /// Box/Container position and rotation
@@ -168,7 +168,7 @@ public class MainViewModel : DependencyObject
     /// swizzling to opengl would be then *.bgra
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    private struct ColorARGB
+    private struct ColorArgb
     {
         [FieldOffset(3)]
         private byte a;
@@ -183,13 +183,13 @@ public class MainViewModel : DependencyObject
 
         public int Color { readonly get => color; set => color = value; }
 
-        public static implicit operator int(ColorARGB color) => color.Color;
+        public static implicit operator int(ColorArgb color) => color.Color;
 
-        public static implicit operator ColorARGB(int color) => new() { Color = color };
+        public static implicit operator ColorArgb(int color) => new() { Color = color };
 
-        public static implicit operator Color(ColorARGB color) => System.Drawing.Color.FromArgb(color);
+        public static implicit operator Color(ColorArgb color) => System.Drawing.Color.FromArgb(color);
 
-        public static implicit operator ColorARGB(Color color) => color.ToArgb();
+        public static implicit operator ColorArgb(Color color) => color.ToArgb();
     }
 
     public double FPS
@@ -379,8 +379,6 @@ public class MainViewModel : DependencyObject
 
     private void GLSetup()
     {
-        using var _ = Extensions.DebugGroup();
-
         //default screen color
         GL.ClearColor(Color.Gray);
 
@@ -419,7 +417,7 @@ public class MainViewModel : DependencyObject
 
         //line/bezier
         _dXYBezier = BufferData.Create(_beziers * Unsafe.SizeOf<CubicBezierPatch>(), BufferUsageHint.StreamDraw);
-        _dColorBezier = BufferData.Create(_beziers * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
+        _dColorBezier = BufferData.Create(_beziers * Unsafe.SizeOf<ColorArgb>(), BufferUsageHint.StreamDraw);
         _bColorBezier = TextureBuffer.CreateFrom(_dColorBezier, SizedInternalFormat.Rgba8ui);
         _bColorBezier.Use(textureCount++);
 
@@ -438,7 +436,7 @@ public class MainViewModel : DependencyObject
 
         //box/container data buffers
         _dXYAngle = BufferData.Create(_count * Unsafe.SizeOf<PosRot>(), BufferUsageHint.StreamDraw);
-        _dColor = BufferData.Create(_count * Unsafe.SizeOf<ColorARGB>(), BufferUsageHint.StreamDraw);
+        _dColor = BufferData.Create(_count * Unsafe.SizeOf<ColorArgb>(), BufferUsageHint.StreamDraw);
         _dIdProg = BufferData.Create(_count * Unsafe.SizeOf<IdProg>(), BufferUsageHint.StreamDraw);
 
         //Create 'fixed' size buffer for text
@@ -449,12 +447,12 @@ public class MainViewModel : DependencyObject
         //Triple buffer for data writing
         _tTriple = new(() => (
                 new PosRot[_count],
-                new ColorARGB[_count],
+                new ColorArgb[_count],
                 new IdProg[_count],
                 BitmapFont.MakeArray(_dXYAngleBFChar),
                 SpriteSheet.MakeArray(_dXYAngleSSSprite),
                 new CubicBezierPatch[_beziers],
-                new ColorARGB[_beziers]))
+                new ColorArgb[_beziers]))
             ;//will be streamed to _d*
 
         //render Input definitions

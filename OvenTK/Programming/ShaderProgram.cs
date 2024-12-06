@@ -26,7 +26,7 @@ public class ShaderProgram : IDisposable
     /// <returns></returns>
     public ShaderProgram WithLabel(string label)
     {
-        if (!Extensions.InDebug)
+        if (!DebugExtensions.InDebug)
             return this;
         label.EnsureASCII();
         GL.ObjectLabel(ObjectLabelIdentifier.Program, Handle, -1, label);
@@ -262,4 +262,5 @@ public class ShaderProgram : IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
+
 }
