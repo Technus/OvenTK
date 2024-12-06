@@ -14,6 +14,14 @@ public class MainViewModel : DependencyObject
 
     private const int _cpus = 4;
 
+    private const int _boxes = 1000;
+    private const int _containers = 1000;
+    private const int _count = _boxes + _containers;/// must distribute equally across <see cref="_cpus"/>
+
+    private const int _base = 0;
+    private const int _boxBase = _base;
+    private const int _containerBase = _base + _boxes;
+
     private const int _boxWidth = 120;
     private const int _boxHeight = 64;
     private const int _digitWidth = 18;
@@ -31,7 +39,7 @@ public class MainViewModel : DependencyObject
     private Uniform _uniform = new()
     {
         CameraScale = 1,
-        InstanceCount = 2000,/// must distribute equally across <see cref="_cpus"/>, do not edit on runtime... or prepare everything for it
+        InstanceCount = _count,//do not edit on runtime... or prepare code to hadnle it
     };
     private TripleBufferSimple<(PosRot[] xyar, int[] color, IdProg[] cip_)> _dTtriple;
 
@@ -254,45 +262,45 @@ public class MainViewModel : DependencyObject
 
             //rect boxes
             _vBox.Use();
-            _uniform.InstanceBase = 0;
+            _uniform.InstanceBase = _boxBase;
             _sUniform.Recreate(ref _uniform);
             GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-                default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+                default, _boxes, _uniform.InstanceBase);
 
             //square containers
             _vContainer.Use();
-            _uniform.InstanceBase = _uniform.InstanceCount / 2;
+            _uniform.InstanceBase = _containerBase;
             _sUniform.Recreate(ref _uniform);
             GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-                default, _uniform.InstanceCount / 2, _uniform.InstanceBase);
+                default, _containers, _uniform.InstanceBase);
         }
 
         if( _uniform.CameraScale >= 0.25)
         {
             _vDigits.Use();
             _pDigits.Use();
-            _uniform.InstanceBase = 0;
+            _uniform.InstanceBase = _base;
 
             _uniform.DigitIndex = 0;
             const int idDigits = 4;
-            for (int i = 0; i < idDigits; i++)//foreach container id digit
+            for (int i = 0; i < idDigits; i++)//foreach id digit
             {
                 _uniform.DigitDiv = (int)Math.Pow(10, idDigits - i - 1);
                 _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, +_digitHeight / 2);
                 _sUniform.Recreate(ref _uniform);
                 GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-                    default, _uniform.InstanceCount, _uniform.InstanceBase);
+                    default, _count, _uniform.InstanceBase);
             }
 
             _uniform.DigitIndex = 1;
             const int progDigits = 6;
-            for (int i = 0; i < progDigits; i++)//foreach container id digit
+            for (int i = 0; i < progDigits; i++)//foreach prog digit
             {
                 _uniform.DigitDiv = (int)Math.Pow(10, progDigits - i - 1);
                 _uniform.DigitPosition = new(i * _digitWidth - _boxWidth / 2 + _leftMargin, -_digitHeight / 2);
                 _sUniform.Recreate(ref _uniform);
                 GL.DrawElementsInstancedBaseInstance(PrimitiveType.Triangles, _sRectIndices.DrawCount, _sRectIndices.DrawType,
-                    default, _uniform.InstanceCount, _uniform.InstanceBase);
+                    default, _count, _uniform.InstanceBase);
             }
         }
 
