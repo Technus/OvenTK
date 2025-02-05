@@ -74,7 +74,7 @@ public class SpriteSheet : IDisposable
 
         foreach (var image in imageList)
         {
-            minSize = Math.Min(minSize, Math.Min(image.Width, image.Height));
+            minSize = Math.Min(minSize, Math.Min(image.Width, image.Height));//apparent Width/Height
         }
 
         var mipLevels = Math.Min(maxMipLevels, 1+(int)(Math.Log(minSize) / _log2));//this ensures no color bleed and max mipping
@@ -84,12 +84,16 @@ public class SpriteSheet : IDisposable
         mapper ??= new MapperOptimalEfficiency<Mapping>(new Canvas());
         var id = 1;
         var mapping = mapper.Mapping(imageList);
-        var mappedImages = mapping.MappedImages.OrderBy(img=>(img.ImageInfo as RectImage)!.Id).Select(img =>
+        var mappedImages = mapping.MappedImages
+            .OrderBy(img=>(img.ImageInfo as RectImage)!.Id)
+            .Select(img =>
         {
             if (img.ImageInfo is not RectImage rectImg)
                 throw new InvalidOperationException("invalid image");
-            data[id++] = new((short)img.X, (short)img.Y, (short)rectImg.ImageResult.Width, (short)rectImg.ImageResult.Height);
-            return (img.X, img.Y, rectImg.ImageResult);
+            var xPos = img.X + (rectImg.Width - rectImg.ImageResult.Width) / 2;
+            var yPos = img.Y + (rectImg.Height - rectImg.ImageResult.Height) / 2;
+            data[id++] = new((short)xPos, (short)yPos, (short)rectImg.ImageResult.Width, (short)rectImg.ImageResult.Height);
+            return (xPos, yPos, rectImg.ImageResult);
         });
 
         var spriteSheet = Texture.CreateFrom(mappedImages, mapping.Width, mapping.Height, TextureTarget.Texture2D, mipLevels);
@@ -117,6 +121,30 @@ public class SpriteSheet : IDisposable
         foreach (var image in images)
         {
             var pow2RectImage = RectImage.CreatePow2Size(image.LoadImageAndDispose(), id++);
+            imageList.Add(pow2RectImage);
+        }
+
+        return CreateFrom(imageList, mapper, maxMipLevels);
+    }
+
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enumeration of streams in <paramref name="images"/><br/>
+    /// The <paramref name="images"/> count should be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// </summary>
+    /// <param name="images"></param>
+    /// <param name="mapper"></param>
+    /// <param name="padding"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns>The sprite sheet with 0 being an empty placeholder and images from list taking next places starting from 1</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static SpriteSheet CreateFromPadded(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int padding = 1, int maxMipLevels = Texture.MaxLevel_NoMip)
+    {
+        var imageList = new List<RectImage>();
+
+        var id = 1;
+        foreach (var image in images)
+        {
+            var pow2RectImage = RectImage.CreateExpanded(image.LoadImageAndDispose(), id++, padding);
             imageList.Add(pow2RectImage);
         }
 
@@ -446,6 +474,38 @@ public class SpriteSheet<TKey> : SpriteSheet where TKey : struct, Enum, IConvert
     public static new SpriteSheet<TKey> CreateFrom(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int maxMipLevels = Texture.MaxLevel_MipDefault)
     {
         using var sheet = SpriteSheet.CreateFrom(images, mapper, maxMipLevels);
+        sheet._disposedValue = true;//To prevent GC of resources passed to clone
+        return new(sheet);
+    }
+
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enum descriptions<br/>
+    /// Using <paramref name="textureResolver"/> to map enum <see cref="DescriptionAttribute"/> to image streams
+    /// </summary>
+    /// <param name="textureResolver"></param>
+    /// <param name="mapper"></param>
+    /// <param name="padding"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
+    public static SpriteSheet<TKey> CreateFromPadded(Func<TKey, Stream> textureResolver, IMapper<Mapping>? mapper = default, int padding = 1, int maxMipLevels = Texture.MaxLevel_MipDefault)
+    {
+        var values = Enum.GetValues(typeof(TKey)).Cast<TKey>().Except([default]);
+        return CreateFromPadded(values.Select(textureResolver.Invoke), mapper, padding, maxMipLevels);
+    }
+
+    /// <summary>
+    /// Creates sprite sheet from sprites based on enumeration of streams<br/>
+    /// The <paramref name="images"/> count sould be equal to or greater than defined consecutive enums (excluding 0 value)
+    /// </summary>
+    /// <param name="images"></param>
+    /// <param name="mapper"></param>
+    /// <param name="padding"></param>
+    /// <param name="maxMipLevels"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static new SpriteSheet<TKey> CreateFromPadded(IEnumerable<Stream> images, IMapper<Mapping>? mapper = default, int padding = 1, int maxMipLevels = Texture.MaxLevel_MipDefault)
+    {
+        using var sheet = SpriteSheet.CreateFromPadded(images, mapper, padding, maxMipLevels);
         sheet._disposedValue = true;//To prevent GC of resources passed to clone
         return new(sheet);
     }

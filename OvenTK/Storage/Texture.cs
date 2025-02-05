@@ -23,6 +23,10 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// Default level of mipping used in this lib
     /// </summary>
     public const int MaxLevel_MipDefault = 4;
+    /// <summary>
+    /// Multisampling of level 1 is equal to no multisampling
+    /// </summary>
+    public const int No_Multisampling = 1;
 
     private bool _disposed;
 
@@ -73,17 +77,43 @@ public class Texture : TextureBase, IDisposable, IImageInfo
     /// <param name="target"></param>
     /// <param name="mipLevels"></param>
     /// <returns></returns>
-    public static Texture Create(int width, int height, SizedInternalFormat format = SizedInternalFormat.Rgba8, TextureTarget target = TextureTarget.Texture2D, int mipLevels = MaxLevel_MipDefault)
+    public static Texture Create(int width, int height,
+        SizedInternalFormat format = SizedInternalFormat.Rgba8,
+        TextureTarget target = TextureTarget.Texture2D,
+        int mipLevels = MaxLevel_MipDefault) =>
+        CreateMultisampled(width, height, No_Multisampling, true, format, target, mipLevels);
+
+    /// <summary>
+    /// Create texture storage
+    /// </summary>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="multisample"></param>
+    /// <param name="fixedSampleLocation"></param>
+    /// <param name="format"></param>
+    /// <param name="target"></param>
+    /// <param name="mipLevels"></param>
+    /// <returns></returns>
+    public static Texture CreateMultisampled(int width, int height, 
+        int multisample, bool fixedSampleLocation = true,
+        SizedInternalFormat format = SizedInternalFormat.Rgba8, 
+        TextureTarget target = TextureTarget.Texture2DMultisample,
+        int mipLevels = MaxLevel_MipDefault)
     {
         GL.CreateTextures(target, 1, out int handle);
         GL.TextureParameter(handle, TextureParameterName.TextureMaxLevel, mipLevels);
 
-        GL.TextureStorage2D(handle, mipLevels, format, width, height);
+        if (multisample is No_Multisampling)
+        {
+            GL.TextureStorage2D(handle, mipLevels, format, width, height);
 
-        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.TextureParameter(handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-        GL.TextureParameter(handle, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, mipLevels is <= 1 ? (int)TextureMinFilter.Linear : (int)TextureMinFilter.LinearMipmapLinear);
+            GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TextureParameter(handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TextureParameter(handle, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+        }
+        else
+            GL.TextureStorage2DMultisample(handle, multisample, format, width, height, fixedSampleLocation);
 
         return new(handle, width, height, target);
     }
@@ -133,7 +163,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
         GL.TextureStorage2D(handle, mipLevels, SizedInternalFormat.Rgba8, imageResult.Width, imageResult.Height);
         GL.TextureSubImage2D(handle, 0, 0, 0, imageResult.Width, imageResult.Height, PixelFormat.Rgba, PixelType.UnsignedByte, imageResult.Data);
 
-        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, mipLevels is <= 1 ? (int)TextureMinFilter.Linear : (int)TextureMinFilter.LinearMipmapLinear);
         GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
         GL.TextureParameter(handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
         GL.TextureParameter(handle, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
@@ -161,7 +191,7 @@ public class Texture : TextureBase, IDisposable, IImageInfo
         foreach (var (x, y, texture) in textures)
             GL.TextureSubImage2D(handle, 0, x, y, texture.Width, texture.Height, PixelFormat.Rgba, PixelType.UnsignedByte, texture.Data);
 
-        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TextureParameter(handle, TextureParameterName.TextureMinFilter, mipLevels is <= 1 ? (int)TextureMinFilter.Linear : (int)TextureMinFilter.LinearMipmapLinear);
         GL.TextureParameter(handle, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
         GL.TextureParameter(handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
         GL.TextureParameter(handle, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);

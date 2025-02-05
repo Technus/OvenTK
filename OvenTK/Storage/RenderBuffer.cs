@@ -8,6 +8,11 @@ namespace OvenTK.Lib.Storage;
 /// </summary>
 public class RenderBuffer : IDisposable
 {
+    /// <summary>
+    /// Multisampling of level 1 is equal to no multisampling
+    /// </summary>
+    public const int No_Multisampling = 1;
+
     private bool _disposed;
 
     /// <summary>
@@ -53,10 +58,32 @@ public class RenderBuffer : IDisposable
     /// <param name="format"></param>
     /// <param name="target"></param>
     /// <returns></returns>
-    public static RenderBuffer Create(int width, int height, RenderbufferStorage format = RenderbufferStorage.Depth24Stencil8, RenderbufferTarget target = RenderbufferTarget.Renderbuffer)
+    public static RenderBuffer Create(int width, int height,
+        RenderbufferStorage format = RenderbufferStorage.Depth24Stencil8,
+        RenderbufferTarget target = RenderbufferTarget.Renderbuffer) =>
+        CreateMultisampled(width, height, No_Multisampling, format, target);
+
+    /// <summary>
+    /// Creates a framebuffer
+    /// </summary>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="multisample"></param>
+    /// <param name="format"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    public static RenderBuffer CreateMultisampled(int width, int height, 
+        int multisample,
+        RenderbufferStorage format = RenderbufferStorage.Depth24Stencil8, 
+        RenderbufferTarget target = RenderbufferTarget.Renderbuffer)
     {
         GL.CreateRenderbuffers(1, out int handle);
-        GL.NamedRenderbufferStorage(handle, format, width, height);
+
+        if (multisample is No_Multisampling)
+            GL.NamedRenderbufferStorage(handle, format, width, height);
+        else
+            GL.NamedRenderbufferStorageMultisample(handle, multisample, format, width, height);
+
         return new(handle, target);
     }
 
