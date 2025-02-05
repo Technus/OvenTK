@@ -1,5 +1,6 @@
 using OpenTK.Graphics.OpenGL4;
 using OvenTK.Lib;
+using OvenTK.Utility;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
@@ -90,7 +91,7 @@ public class MainViewModelOld : DependencyObject
                 var batch = _count / cpus;
                 var tasks = Enumerable.Range(0, cpus).Select(i => Task.Factory.StartNew(() =>
                 {
-                    var random = new Random();
+                    var random = ThreadSafeRandom.Instance;
                     var start = i * batch;
                     var end = start + batch;
                     for (int j = start; j < end; j++)

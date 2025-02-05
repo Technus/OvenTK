@@ -26,7 +26,7 @@ public class BitmapFont : IDisposable
 
     private bool _disposedValue;
     /// <summary>
-    /// Stires the font metadata
+    /// Stores the font metadata
     /// </summary>
     public Font FontDefinition { get; private set; }
     /// <summary>

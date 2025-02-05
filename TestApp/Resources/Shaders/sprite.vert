@@ -8,7 +8,7 @@ layout (location = 1) in vec4 dXYAngleSSSprite; //single char position, rotation
 
 layout (location = 0) out vec2 texurePosition; //to next shader
 
-layout (binding = 0) uniform Uniform {
+layout (location = 0) uniform Uniform {
     vec2 size;
     vec2 texSize;
     vec2 pos;
