@@ -18,7 +18,7 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<IncludeContentInPack>true</IncludeContentInPack>
 
-		<TargetFrameworks>netstandard2.1;net461;net481;net6;net8;</TargetFrameworks>
+		<TargetFrameworks>netstandard2.1;net461;net481;net6;net8;net9;</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<!-- S2368 - multidimensional/jagged arrays in public API -->
 		<NoWarn>$(NoWarn);S2368;CS8500;</NoWarn>
@@ -29,24 +29,27 @@
 			<ItemGroup>
 				<PackageReference Include="OpenTK.Graphics" Version="4.8.2" />
 				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Graphics.Wgl.Wgl" Alias="WGL" />
 				<Using Include="OpenTK.Graphics" />
 				<Using Include="OpenTK.Mathematics" />
 			</ItemGroup>
 		</When>
-		<When Condition=" '$(TargetFramework)' == 'net6' or '$(TargetFramework)' == 'net8' ">
+		<When Condition=" '$(TargetFramework)' == 'net6' or '$(TargetFramework)' == 'net8' or '$(TargetFramework)' == 'net9'">
 			<ItemGroup>
 				<PackageReference Include="OpenTK" Version="4.8.2" />
 				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Graphics.Wgl.Wgl" Alias="WGL" />
 				<Using Include="OpenTK.Graphics" />
 				<Using Include="OpenTK.Mathematics" />
 			</ItemGroup>
 		</When>
 		<Otherwise>
 			<ItemGroup>
-				<PackageReference Include="OpenTK" Version="3.3.3" />
 				<PackageReference Include="System.Memory" Version="4.6.0" />
 				<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
+				<PackageReference Include="OpenTK" Version="3.3.3" />
 				<Using Include="OpenTK" />
+				<Using Include="OpenTK.Platform.Windows.Wgl" Alias="WGL" />
 			</ItemGroup>
 		</Otherwise>
 	</Choose>
@@ -58,5 +61,6 @@
 		<Using Include="OpenTK.Graphics.OpenGL4" />
 		<Using Include="System.Buffers" />
 		<Using Include="System.Runtime.CompilerServices" />
+		<Using Include="System.Runtime.InteropServices" />
 	</ItemGroup>
 </Project>

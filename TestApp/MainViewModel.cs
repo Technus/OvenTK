@@ -265,12 +265,6 @@ public class MainViewModel : DependencyObject
             vm._invalidated = true;
         }));
 
-    public MainViewModel()
-    {
-        GLSetup();
-        Task.Run(() => DataWrite().ConfigureAwait(false));
-    }
-
     /// <summary>
     /// Writes some random data to render
     /// </summary>
@@ -382,7 +376,7 @@ public class MainViewModel : DependencyObject
         }
     }
 
-    private void GLSetup()
+    public void GLSetup()
     {
         GL.Disable(EnableCap.CullFace);
 
@@ -468,6 +462,8 @@ public class MainViewModel : DependencyObject
                 new CubicBezierPatch[_beziers],
                 new ColorArgb[_beziers]))
             ;//will be streamed to _d*
+
+        Task.Run(() => DataWrite().ConfigureAwait(false));
 
         //render Input definitions
         _vBox = VertexArray.Create(_sRectIndices, [
@@ -697,10 +693,12 @@ public class MainViewModel : DependencyObject
         Debug.WriteLine($"Draw Time {td}");
     }
 
-    internal void OnResize(object sender, SizeChangedEventArgs e)
+    internal void OnResize(object sender, SizeChangedEventArgs e) => OnResize(e.NewSize);
+
+    internal void OnResize(System.Windows.Size size)
     {
-        var x = Math.Max(1,(int)e.NewSize.Width);
-        var y = Math.Max(1,(int)e.NewSize.Height);
+        var x = Math.Max(1, (int)size.Width);
+        var y = Math.Max(1, (int)size.Height);
         _uniform.Resolution = new()
         {
             X = x,

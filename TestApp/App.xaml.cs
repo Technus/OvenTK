@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using ObjectLayoutInspector;
+using OvenTK.Lib;
+using System.Windows;
 
 namespace OvenTK.TestApp;
 /// <summary>
@@ -10,15 +12,21 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        var view = new MainView();
-        var viewModel = new MainViewModel();
-        
-        view.DataContext = viewModel;
-        view.GLWpfControl.Render += viewModel.OnRender;
-        view.GLWpfControl.SizeChanged += viewModel.OnResize;
+        var list = new List<int>
+        {
+            1,
+            2
+        };
+
+        var l = TypeLayout.GetLayout<List<int>>();
+
+        var s1 = list.ToSpanUnsafe();
+        list.SetCountUnsafe(1);
+        var s2 = list.ToSpanUnsafe();
 
         var window = new MainWindow();
-        window.DataContext = view;
+
+        window.DataContext = new MainViewModel();
         MainWindow = window;
         MainWindow.Show();
     }
