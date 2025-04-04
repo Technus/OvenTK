@@ -1,44 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>WinExe</OutputType>
-		<TargetFrameworks>net9.0-windows;net8.0-windows;net6.0-windows;net481;</TargetFrameworks>
-		<UseWPF>true</UseWPF>
-		<!--Due to WPF bug assembly name should be set directly, we can also set a nice user friendly name here-->
-		<AssemblyName>OvenTK Test App</AssemblyName>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net9.0-windows;net8.0-windows;net6.0-windows;net481;</TargetFrameworks>
+    <UseWPF>true</UseWPF>
+    <!--Due to WPF bug assembly name should be set directly, we can also set a nice user friendly name here-->
+    <AssemblyName>OvenTK Test App</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
 
-	<Choose>
-		<When Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' or '$(TargetFramework)' == 'net6.0-windows'">
-			<ItemGroup>
-				<PackageReference Include="OpenTK.GLWpfControl" Version="4.2.3" />
-				<PackageReference Include="OpenTK" Version="4.8.2" />
-				<Using Include="OpenTK" />
-				<Using Include="OpenTK.Graphics" />
-				<Using Include="OpenTK.Mathematics" />
-				<Using Include="OpenTK.Windowing.Common" />
-			</ItemGroup>
-		</When>
-		<Otherwise>
-			<ItemGroup>
-				<PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" />
-				<PackageReference Include="OpenTK" Version="3.3.3" />
-				<Using Include="OpenTK" />
-			</ItemGroup>
-		</Otherwise>
-	</Choose>
-	
-	<ItemGroup>
-		<Resource Include="Resources\**\*" />
-		<None Remove="Resources\**\*" />
-	</ItemGroup>
-	
-	<ItemGroup>
-	  <PackageReference Include="ObjectLayoutInspector" Version="0.1.4" />
-	</ItemGroup>
-	
-	<ItemGroup>
-		<ProjectReference Include="..\OvenTK\Lib.csproj" />
-	</ItemGroup>
+  <Choose>
+    <When Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' or '$(TargetFramework)' == 'net6.0-windows'">
+      <ItemGroup>
+        <PackageReference Include="OpenTK.GLWpfControl" Version="4.2.3" />
+        <PackageReference Include="OpenTK" Version="4.8.2" />
+        <Using Include="OpenTK" />
+        <Using Include="OpenTK.Graphics" />
+        <Using Include="OpenTK.Mathematics" />
+        <Using Include="OpenTK.Windowing.Common" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" />
+        <PackageReference Include="OpenTK" Version="3.3.3" />
+        <Using Include="OpenTK" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <Resource Include="Resources\**\*" />
+    <None Remove="Resources\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ObjectLayoutInspector" Version="0.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OvenTK\Lib.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,54 +1,55 @@
 <Project>
-	<PropertyGroup Label="Common Properties">
-		<Version>1.0.8.0</Version>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<LangVersion>latest</LangVersion>
-		
-		<PackageIcon>Neith_spacepedia.png</PackageIcon>
-		<PackageTags>OvenTK;OpenTK;OpenGL;</PackageTags>
-		<Authors>Technus</Authors>
-		<PackageProjectUrl>https://github.com/Technus/OvenTK</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Technus/OvenTK</RepositoryUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-		<Copyright></Copyright>
-		
-		<CustomNamePrefix>OvenTK</CustomNamePrefix>
-		<AssemblyName>$(CustomNamePrefix).$(MSBuildProjectName)</AssemblyName>
-		<RootNamespace>$(CustomNamePrefix).$(MSBuildProjectName.Replace(" ", ""))</RootNamespace>
-	</PropertyGroup>
+  <PropertyGroup Label="Common Properties">
+    <Version>1.0.8.0</Version>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
 
-	<PropertyGroup Label="Versioning">
-		<VersionMajor>$([System.Version]::Parse($(Version)).get_Major())</VersionMajor>
-		<VersionMinor>$([System.Version]::Parse($(Version)).get_Minor())</VersionMinor>
-		<VersionBuild>$([System.Version]::Parse($(Version)).get_Build())</VersionBuild>
-		<VersionRevision>$([System.Version]::Parse($(Version)).get_Revision())</VersionRevision>
+    <PackageIcon>Neith_spacepedia.png</PackageIcon>
+    <PackageTags>OvenTK;OpenTK;OpenGL;</PackageTags>
+    <Authors>Technus</Authors>
+    <PackageProjectUrl>https://github.com/Technus/OvenTK</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Technus/OvenTK</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <Copyright></Copyright>
 
-		<VersionBuildDate>$([System.DateTime]::op_Subtraction($([System.DateTime]::get_Now().get_Date()),$([System.DateTime]::new(2000,1,1))).get_TotalDays())</VersionBuildDate>
-		<VersionBuildTime>$([MSBuild]::Divide($([System.DateTime]::get_Now().get_TimeOfDay().get_TotalSeconds()), 2).ToString('F0'))</VersionBuildTime>
+    <CustomNamePrefix>OvenTK</CustomNamePrefix>
+    <AssemblyName>$(CustomNamePrefix).$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>$(CustomNamePrefix).$(MSBuildProjectName.Replace(" ", ""))</RootNamespace>
+  </PropertyGroup>
 
-		<PackageVersion>$(VersionMajor).$(VersionMinor).$(VersionBuild)</PackageVersion>
-		<FileVersion>$(VersionMajor).$(VersionMinor).$(VersionBuildDate).$(VersionBuildTime)</FileVersion>
-		<AssemblyVersion>$(VersionMajor).$(VersionMinor).$(VersionBuild).$(VersionRevision)</AssemblyVersion>
-	</PropertyGroup>
+  <PropertyGroup Label="Versioning">
+    <VersionMajor>$([System.Version]::Parse($(Version)).get_Major())</VersionMajor>
+    <VersionMinor>$([System.Version]::Parse($(Version)).get_Minor())</VersionMinor>
+    <VersionBuild>$([System.Version]::Parse($(Version)).get_Build())</VersionBuild>
+    <VersionRevision>$([System.Version]::Parse($(Version)).get_Revision())</VersionRevision>
 
-	<ItemGroup>
-		<None Include="$(MSBuildThisFileDirectory)LICENSE.txt" Visible="false" Pack="true" PackagePath=""/>
-		<None Include="$(MSBuildThisFileDirectory)Neith_spacepedia.png" Visible="false" Pack="true" PackagePath=""/>
-		<None Include="$(MSBuildThisFileDirectory)README.md" Visible="false" Pack="true" PackagePath=""/>
-	</ItemGroup>
+    <VersionBuildDate>$([System.DateTime]::op_Subtraction($([System.DateTime]::get_Now().get_Date()),$([System.DateTime]::new(2000,1,1))).get_TotalDays())</VersionBuildDate>
+    <VersionBuildTime Condition=" '$(Configuration)' == 'Debug' ">$([MSBuild]::Divide($([System.DateTime]::get_Now().get_TimeOfDay().get_TotalSeconds()), 2).ToString('F0'))</VersionBuildTime>
 
-	<ItemGroup Label="Common References">
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-	
-	<ItemGroup Label="Common Attributes">
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-			<_Parameter1>$(CustomNamePrefix).Tests</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup>
+    <PackageVersion>$(VersionMajor).$(VersionMinor).$(VersionBuild)</PackageVersion>
+    <FileVersion Condition=" '$(Configuration)' != 'Debug' ">$(VersionMajor).$(VersionMinor).$(VersionBuildDate).$(VersionBuildTime)</FileVersion>
+    <FileVersion Condition=" '$(Configuration)' == 'Debug' ">$(VersionMajor).$(VersionMinor).$(VersionBuildDate).65535</FileVersion>
+    <AssemblyVersion>$(VersionMajor).$(VersionMinor).$(VersionBuild).$(VersionRevision)</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)LICENSE.txt" Visible="false" Pack="true" PackagePath=""/>
+    <None Include="$(MSBuildThisFileDirectory)Neith_spacepedia.png" Visible="false" Pack="true" PackagePath=""/>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Visible="false" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup Label="Common References">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Label="Common Attributes">
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>$(CustomNamePrefix).Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>
